@@ -1,11 +1,29 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Login from './components/Login';
 import AdminDatabases from './components/AdminDatabases';
 import UserQueries from './components/UserQueries';
 import './styles.css';
+
+// ProtectedRoute Component
+const ProtectedRoute = ({ component: Component, ...rest }) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated'); // Check authentication status
+
+  return (
+    <Route
+      {...rest}
+      render={(props) =>
+        isAuthenticated ? (
+          <Component {...props} />
+        ) : (
+          <Redirect to="/login" />
+        )
+      }
+    />
+  );
+};
 
 const App = () => {
   useEffect(() => {
@@ -25,9 +43,15 @@ const App = () => {
     <Router>
       <div className="container">
         <Switch>
+          {/* Public route */}
           <Route path="/login" component={Login} />
-          <Route path="/admin" component={AdminDatabases} />
-          <Route path="/" component={UserQueries} />
+
+          {/* Protected routes */}
+          <ProtectedRoute path="/admin" component={AdminDatabases} />
+          <ProtectedRoute path="/" component={UserQueries} />
+
+          {/* Redirect to login for unknown routes */}
+          <Redirect to="/login" />
         </Switch>
       </div>
 
@@ -43,7 +67,6 @@ const App = () => {
         draggable
         pauseOnHover
       />
-      
     </Router>
   );
 };

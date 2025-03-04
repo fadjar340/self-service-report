@@ -2,6 +2,8 @@ version: '3'
 services:
   postgres:
     image: postgres:13
+    env_file:
+      - ./.env
     environment:
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
@@ -14,7 +16,9 @@ services:
       - app-network
 
   app:
-    build: .
+    build: .  # Build the combined image using the Dockerfile in the root
+    env_file:
+      - ./.env
     environment:
       OAUTH2_DOMAIN: ${OAUTH2_DOMAIN}
       OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID}
