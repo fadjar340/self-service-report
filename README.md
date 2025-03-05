@@ -3,7 +3,7 @@
 
 Web application for user to generate report that already predefined query
 
-# Project Structure
+## Project Structure
 ```markdown
 self-service-app/
 ├── client/
@@ -40,14 +40,14 @@ self-service-app/
 └── README.md
 ```
 
-# Installation from source
+## Installation from source
 1. Clone this repository
 2. Install dependency using  `npm install` or `yarn install`
 3. Modify the .env file to match your environment
 4. Run `npm start` or `yarn start` to start the application
 5. (Optional) Add Nginx in front of the application and add reverse proxy to the applicion, eg: `localhost:3000`
 
-# Installation using Docker
+## Installation using Docker
 1. Clone this repository
 2. Modify the .env file to match with your environment
 3. Run `docker compose up --build` to start the application
