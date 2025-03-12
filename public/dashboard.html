@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Self Service Report</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/dashboard.html" class="navbar-brand">Self Service Report</a>
+        <div class="navbar-nav">
+            <span class="user-info"></span>
+            <span class="user-role"></span>
+            <div class="admin-only">
+                <a href="admin.html" class="nav-link">Admin Panel</a>
+            </div>
+            <button id="logout-btn" class="btn-logout">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="dashboard-header">
+            <h1>Dashboard</h1>
+            <p>Welcome to your self-service report dashboard</p>
+        </div>
+
+        <!-- Query Section -->
+        <div class="query-section mt-4">
+            <h2>Database Queries</h2>
+            <div class="query-actions">
+                <button id="new-query-btn" class="btn btn-primary">New Query</button>
+                <button id="saved-queries-btn" class="btn">Saved Queries</button>
+            </div>
+
+            <!-- Query Form -->
+            <div id="query-form" class="query-form mt-4" style="display: none;">
+                <h3>New Query</h3>
+                <form id="execute-query-form">
+                    <div class="form-group">
+                        <label for="database-select">Select Database</label>
+                        <select id="database-select" required>
+                            <option value="">Choose a database...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="query-text">SQL Query (SELECT only)</label>
+                        <textarea id="query-text" rows="6" required 
+                            placeholder="Enter your SELECT query here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="save-query">
+                            <input type="checkbox" id="save-query">
+                            Save this query
+                        </label>
+                    </div>
+                    <div id="save-query-options" style="display: none;">
+                        <div class="form-group">
+                            <label for="query-name">Query Name</label>
+                            <input type="text" id="query-name" 
+                                placeholder="Enter a name for your query">
+                        </div>
+                        <div class="form-group">
+                            <label for="query-description">Description</label>
+                            <textarea id="query-description" rows="3" 
+                                placeholder="Enter a description for your query"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Execute Query</button>
+                        <button type="button" class="btn" onclick="cancelQuery()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Saved Queries List -->
+            <div id="saved-queries-list" class="saved-queries mt-4" style="display: none;">
+                <h3>Saved Queries</h3>
+                <div class="queries-container">
+                    <!-- Queries will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Query Results -->
+            <div id="query-results" class="query-results mt-4" style="display: none;">
+                <h3>Query Results</h3>
+                <div class="results-info">
+                    <span id="rows-count"></span>
+                    <span id="execution-time"></span>
+                </div>
+                <div class="results-container">
+                    <div class="table-responsive">
+                        <table id="results-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="results-actions mt-4">
+                    <button id="export-csv" class="btn">Export to CSV</button>
+                    <button id="print-results" class="btn">Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message Modal -->
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Error</h3>
+            <p id="error-message"></p>
+            <button onclick="closeErrorModal()" class="btn">Close</button>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

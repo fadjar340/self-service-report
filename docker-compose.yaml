@@ -1,31 +1,32 @@
 version: '3'
 services:
   postgres:
-    image: postgres:13
-    env_file:
-      - ./.env
+    image: postgres:15
+    restart: always
+    user: root
     environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${PG_DATABASE}
+      POSTGRES_PASSWORD: supersecret
+# //     PG_USER: ${PG_USER}
+#   /   PG_PASSWORD: ${PG_PASSWORD}
+#      PG_DATABASE: ${PG_DATABASE}
     ports:
-      - "5432:5432"
+      - "${PG_PORT}:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - app-network
 
   app:
     build: .  # Build the combined image using the Dockerfile in the root
     env_file:
-      - ./.env
+      - .env
     environment:
       OAUTH2_DOMAIN: ${OAUTH2_DOMAIN}
       OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID}
       OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET}
       OAUTH2_TOKEN_URL: ${OAUTH2_TOKEN_URL}
       PG_USER: ${PG_USER}
-      PG_HOST: postgres
+      PG_HOST: ${PG_HOST}
       PG_DATABASE: ${PG_DATABASE}
       PG_PASSWORD: ${PG_PASSWORD}
       PG_PORT: ${PG_PORT}

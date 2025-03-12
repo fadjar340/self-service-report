@@ -1,0 +1,80 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment
+.env
+.env.*
+.env-*
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+*.log
+
+# Testing
+coverage
+.nyc_output
+__tests__
+test
+tests
+*.test.js
+*.spec.js
+
+# Documentation
+docs
+*.md
+LICENSE
+
+# Build artifacts
+dist
+build
+*.tar.gz
+*.zip
+
+# Docker
+.docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Database
+data
+postgres_data
+
+# Reports and logs
+reports/*
+logs
+*.log
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# IDE specific files
+.editorconfig
+.eslintrc
+.prettierrc
+.eslintignore
+.prettierignore
+
+# Misc
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+.DS_Store
+Thumbs.db

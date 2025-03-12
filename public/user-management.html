@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Self-Service Report</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <i class="fas fa-users-cog"></i>
+                User Management
+            </h1>
+            <div class="header-actions">
+                <span class="user-info">
+                    <i class="fas fa-user"></i>
+                    <span id="username">Loading...</span>
+                </span>
+                <div class="admin-menu">
+                    <button id="adminDashboardBtn" class="btn-secondary">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Admin Dashboard
+                    </button>
+                    <button id="logoutBtn" class="danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="user-management">
+            <div class="action-bar">
+                <button id="addUserBtn" class="btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    Add User
+                </button>
+            </div>
+
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" class="loading-cell">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Loading users...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+        <!-- User Modal -->
+        <div id="userModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Add User</h2>
+                    <button id="closeModalBtn" class="close-btn">&times;</button>
+                </div>
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" minlength="6">
+                        <span class="password-hint">Leave empty to keep current password when editing</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role" name="role" required>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancelBtn" class="btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Delete User</h2>
+                    <button id="closeDeleteModalBtn" class="close-btn">&times;</button>
+                </div>
+                <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+                <p class="warning-text">Note: You cannot delete your own account.</p>
+                <div class="form-actions">
+                    <button id="cancelDeleteBtn" class="btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button id="confirmDeleteBtn" class="btn-delete">
+                        <i class="fas fa-trash-alt"></i>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>© 2025 Self-Service Report System. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="js/user-management.js"></script>
+</body>
+</html>

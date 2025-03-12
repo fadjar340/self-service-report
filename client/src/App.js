@@ -1,27 +1,21 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Login from './components/Login';
-import AdminDatabases from './components/AdminDatabases';
-import UserQueries from './components/UserQueries';
+import Login from './Login';
+import AdminDatabases from './AdminDatabases';
+import UserQueries from './UserQueries';
 import './styles.css';
 
 // ProtectedRoute Component
-const ProtectedRoute = ({ component: Component, ...rest }) => {
+const ProtectedRoute = ({ element: Component, ...rest }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated'); // Check authentication status
 
   return (
-    <Route
-      {...rest}
-      render={(props) =>
-        isAuthenticated ? (
-          <Component {...props} />
-        ) : (
-          <Redirect to="/login" />
-        )
-      }
-    />
+      <Route
+        {...rest}
+        element={isAuthenticated ? <Component /> : <Navigate to="/login" />}
+      />
   );
 };
 
@@ -42,17 +36,17 @@ const App = () => {
   return (
     <Router>
       <div className="container">
-        <Switch>
+        <Routes>
           {/* Public route */}
-          <Route path="/login" component={Login} />
+          <Route path="/login" element={<Login />} />
 
           {/* Protected routes */}
-          <ProtectedRoute path="/admin" component={AdminDatabases} />
-          <ProtectedRoute path="/" component={UserQueries} />
+          <ProtectedRoute path="/admin" element={AdminDatabases} />
+          <ProtectedRoute path="/user-queries" element={UserQueries} />
 
           {/* Redirect to login for unknown routes */}
-          <Redirect to="/login" />
-        </Switch>
+          <Navigate to="/login" />
+        </Routes>
       </div>
 
       {/* ToastContainer should be placed here, outside the main content but inside the Router */}

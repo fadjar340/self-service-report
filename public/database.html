@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand">Query Manager</a>
+        <div class="navbar-nav">
+            <a href="/dashboard.html" class="nav-link">Dashboard</a>
+            <a href="/admin.html" class="nav-link">Admin</a>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>Query Management</h1>
+            <p>Manage and execute your saved queries.</p>
+        </div>
+
+        <!-- Query Actions -->
+        <div class="query-actions">
+            <button id="addQueryBtn" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Query
+            </button>
+        </div>
+
+        <!-- Query Table -->
+        <div class="query-section">
+            <h2>Saved Queries</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Query</th>
+                            <th>Created At</th>
+                            <th>Updated At</th>
+                            <th>Created By</th>
+                            <th>Updated By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queriesTableBody">
+                        <!-- Queries will be dynamically populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Query Modal -->
+    <div id="queryModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add Query</h2>
+            <form id="queryForm">
+                <div class="form-group">
+                    <label for="name">Query Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="queryText">Query Text</label>
+                    <textarea id="queryText" name="queryText" rows="5" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="closeModalBtn" class="btn btn-warning">Close</button>
+                    <button type="button" id="cancelBtn" class="btn btn-warning">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Delete Query</h2>
+            <p>Are you sure you want to delete this query?</p>
+            <div class="form-actions">
+                <button id="closeDeleteModalBtn" class="btn btn-warning">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loader" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/database.js"></script>
+</body>
+</html>

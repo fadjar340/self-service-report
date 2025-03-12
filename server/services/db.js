@@ -1,23 +1,35 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
 const { Connection, Request, TYPES } = require('tedious');
 
-// PostgreSQL configuration
 const pgPool = new Pool({
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
+  user: process.env.PG_USER, // Use PG_USER for initial connection
+  host: process.env.PG_HOST, // Use PG_HOST for initial connection
   database: process.env.PG_DATABASE,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
+  password: process.env.PG_PASSWORD, // Use PG_PASSWORD for initial connection
+  port: process.env.PG_PORT, // Use PG_PORT for initial connection
 });
 
-// Check if a user is an admin
-const isAdmin = async (username) => {
-  const query = 'SELECT * FROM admin_users WHERE username = $1';
-  const result = await pgPool.query(query, [username]);
-  return result.rows.length > 0;
+const validateUserCredentials = async (username, password) => {
+    const query = 'SELECT role, password FROM admin_users WHERE username = $1';
+    const values = [username];
+
+    const result = await pgPool.query(query, values);
+    if (result.rows.length > 0) {
+        const user = result.rows[0];
+        const isPasswordValid = await bcrypt.compare(password, user.password); // Compare hashed password
+        return isPasswordValid ? user.role : null; // Return role if valid, else null
+    }
+    return null; // Return null if user not found
 };
 
-// Fetch predefined queries
+const checkIfAdmin = async (username) => {
+    const query = 'SELECT role FROM admin_users WHERE username = $1';
+    const values = [username];
+    const result = await pgPool.query(query, values);
+    return result.rows.length > 0 && result.rows[0].role === 'admin';
+};
+
 const getPredefinedQueries = async () => {
   const query = 'SELECT id, name, sybase_query FROM predefined_queries';
   const result = await pgPool.query(query);
@@ -59,7 +71,7 @@ const executeSybaseQuery = async (query, params) => {
     throw new Error('Database not found');
   }
 
-  const { server, user, password, database, port } = databaseConfig.rows[0];
+  const { server, db_user, password, database, port } = databaseConfig.rows[0];
 
   // Tedious configuration
   const config = {
@@ -67,7 +79,7 @@ const executeSybaseQuery = async (query, params) => {
     authentication: {
       type: 'default',
       options: {
-        userName: user,
+        userName: db_user,
         password,
       },
     },
@@ -135,8 +147,9 @@ const executeSybaseQuery = async (query, params) => {
 };
 
 module.exports = {
-  isAdmin,
+  checkIfAdmin,
   getPredefinedQueries,
+  validateUserCredentials,
   getPredefinedQueryById,
   createPredefinedQuery,
   updatePredefinedQuery,
