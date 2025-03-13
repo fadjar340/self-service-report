@@ -8,19 +8,21 @@ const { authenticate, authorize } = require('./authController');
 // Save a new database
 const saveDatabase = async (req, res) => {
     try {
-        const { conn_name, host, port, database_name, username, password, isActive } = req.body;
+        const { id, conn_name, host, port, database_name, username, password, isActive } = req.body;
 
         // Create query
         const query = await SybaseDatabase.create({
+            id,
             conn_name,
             host,
             port,
             database_name,
             username,
             password,
-            updatedBy: req.user.id, // Set updatedBy to the authenticated user's ID
-            updatedAt: new Date(), // Set updatedAt to the current timestamp
+            createdBy: req.user.id, // Set updatedBy to the authenticated user's ID
+            createdAt: new Date(), // Set updatedAt to the current timestamp
             isActive
+            
         });
 
         res.status(201).json({
@@ -47,10 +49,10 @@ const saveDatabase = async (req, res) => {
 // Update a saved database
 const updateDatabase = async (req, res) => {
     try {
-        const { conn_name } = req.params;
+        const { id } = req.params;
 
         // Find query
-        const query = await SybaseDatabase.findByName(conn_name);
+        const query = await SybaseDatabase.findById(id);
         if (!query) {
             return res.status(404).json({
                 error: 'Not found',
@@ -70,8 +72,7 @@ const updateDatabase = async (req, res) => {
         await query.update({
             ...req.body, // Include all fields from the request
             updatedBy: req.user.id, // Set updatedBy to the authenticated user's ID
-            updatedAt: new Date(), // Set updatedAt to the current timestamp
-            isActive: req.body.isActive // Set isActive to the value from the request
+            updatedAt: new Date() // Set updatedAt to the current timestamp
         });
 
         res.json({
@@ -98,40 +99,68 @@ const updateDatabase = async (req, res) => {
 // Delete a saved database (logical deletion)
 const deleteDatabase = async (req, res) => {
     try {
-        const { conn_name } = req.params;
-
-        // Find query
-        const query = await SybaseDatabase.findByName(conn_name);
-        if (!query) {
-            return res.status(404).json({
-                error: 'Not found',
-                message: 'Query not found'
+        // Decode the connection name and trim whitespace
+        const id =(req.params.id);
+        
+        if (!id) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Connection name is required'
             });
         }
 
-        // Check ownership or admin role
-        if (query.createdBy !== req.user.id && req.user.role !== 'admin') {
+        // Find the database connection with case-insensitive search
+        const database = await SybaseDatabase.findOne({
+            where: { id: id }          
+        });
+
+        if (!database) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: `Database connection '${conn_name}' not found`
+            });
+        }
+
+        // Verify ownership or admin privileges
+        if (database.createdBy !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({
                 error: 'Forbidden',
-                message: 'You do not have permission to delete this query'
+                message: 'You do not have permission to delete this connection'
             });
         }
 
-        // Perform logical deletion
-        await query.update({
-            isActive: false, // Set isActive to false
-            deletedBy: req.user.id, // Set deletedBy to the authenticated user's ID
-            deletedAt: new Date() // Set deletedAt to the current timestamp
+        // Perform logical deletion with transaction
+        const result = await SybaseDatabase.sequelize.transaction(async (t) => {
+            return await database.update({
+                isActive: false,
+                deletedAt: new Date(),
+                deletedBy: req.user.id,
+                isDeleted: true
+            }, { transaction: t });
         });
 
         res.json({
-            message: 'Query deleted successfully'
+            message: 'Database connection deleted successfully',
+            details: {
+                connectionName: result.conn_name,
+                deletedAt: result.deletedAt,
+                deletedBy: result.deletedBy,
+                isDeleted: result.isDeleted
+            }
         });
+
     } catch (error) {
-        console.error('Delete query error:', error);
+        console.error('Delete Database Error:', {
+            error: error.message,
+            connection: req.params.conn_name,
+            user: req.user.id,
+            timestamp: new Date().toISOString()
+        });
+        
         res.status(500).json({
-            error: 'Server error',
-            message: 'Could not delete query'
+            error: 'Internal Server Error',
+            message: 'Failed to delete database connection',
+            systemMessage: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
@@ -144,7 +173,8 @@ const loadDatabases = async (req, res) => {
         // Build the where clause for search (if provided)
         const where = {};
         if (search) {
-            where.id = { [Op.like]: `%${search}%` };
+            where.id = { [Op.like]: `%${search}%` },
+            where.isDeleted = false;
         }
 
         // Fetch all databases with pagination
@@ -193,10 +223,10 @@ const loadDatabases = async (req, res) => {
 // Get a specific database
 const getDatabase = async (req, res) => {
     try {
-        const { conn_name } = req.params;
+        const { id } = req.params;
 
 
-        const query = await SybaseDatabase.findByName(conn_name, {
+        const query = await SybaseDatabase.findById(id, {
             include: [
                 {
                     model: AdminUser,

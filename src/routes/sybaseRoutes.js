@@ -52,7 +52,7 @@ const saveDatabaseValidation = [
 
 // Validation for updating Sybase database
 const updateDatabaseValidation = [
-    param('conn_name'),
+    param('id'),
     body('conn_name')
         .optional()
         .trim()
@@ -91,12 +91,17 @@ const updateDatabaseValidation = [
         .withMessage('Username is too long'),
     body('password')
         .optional()
-        .trim()
-        .notEmpty()
-        .withMessage('Password is required')
-        .isLength({ max: 25 })
-        .withMessage('Password is too long'),
+        .trim(),
     body('isActive')
+        .optional()
+        .isBoolean()
+        .withMessage('Status must be a boolean (true or false)')
+];
+
+// Validation for updating Sybase database
+const deleteDatabaseValidation = [
+    param('id'),
+    body('isDeleted')
         .optional()
         .isBoolean()
         .withMessage('Status must be a boolean (true or false)')
@@ -126,13 +131,14 @@ router.post(
         req.body.createdBy = req.user.id; // Assuming req.user contains the authenticated user
         req.body.updatedBy = req.user.id;
         req.body.isActive = true||false;
+        req.body.isDeleted = false;
         next();
     },
     sybaseController.saveDatabase
 );
 
 router.put(
-    '/updateDatabase:conn_name',
+    '/updateDatabase/:id',
     isAdmin,
     updateDatabaseValidation,
     handleValidationErrors,
@@ -141,49 +147,27 @@ router.put(
         req.body.updatedBy = req.user.id;
          // Assuming req.user contains the authenticated user
         req.body.isActive = true||false;
+        req.body.isDeleted = false;
         next();
     },
     sybaseController.updateDatabase
 );
 
 router.delete(
-    '/deleteDatabase:conn_name',
+    '/deleteDatabase/:id',
     isAdmin,
+    deleteDatabaseValidation,
     [
-        param('conn_name')
-        //   .isInt({ min: 1 })
-        //   .withMessage('Database ID must be a positive integer')
+        param('id')
+           .isInt({ min: 1 })
+           .withMessage('Database ID must be a positive integer')
     ],
     handleValidationErrors,
-    async (req, res, next) => {
-        try {
-            const database = await SybaseDatabase.findByName(req.params.conn_name);
-            if (!database) {
-                return res.status(404).json({
-                    error: 'Not found',
-                    message: 'Database not found'
-                });
-            }
-
-            // Perform logical deletion
-            database.isActive = false;
-            database.deletedBy = req.user.id; // Set deletedBy to the authenticated user's ID
-            database.deletedAt = new Date(); // Set deletedAt to the current timestamp
-
-            await database.save();
-
-            res.json({
-                message: 'Database deleted successfully',
-                data: database
-            });
-        } catch (error) {
-            console.error('Error deleting database:', error);
-            res.status(500).json({
-                error: 'Server error',
-                message: 'Failed to delete database'
-            });
-        }
-    }
+    (req, res, next) => {
+        req.body.isDeleted = true;
+        next();
+    },
+    sybaseController.deleteDatabase
 );
 
 // Query retrieval
@@ -195,11 +179,11 @@ router.get(
 );
 
 router.get(
-    '/getDatabase:conn_name',
+    '/getDatabase:id',
     [
-        param('conn_name')
-        //    .isInt({ min: 1 })
-        //    .withMessage('Database ID must be a positive integer')
+        param('id')
+            .isInt({ min: 1 })
+            .withMessage('Database ID must be a positive integer')
     ],
     handleValidationErrors,
     sybaseController.getDatabase

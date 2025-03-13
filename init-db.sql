@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS admin_users (
     "createdBy" INTEGER REFERENCES admin_users(id),
     "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
     "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    "isActive" BOOLEAN DEFAULT TRUE
+    "isActive" BOOLEAN DEFAULT TRUE,
+    "isDeleted" BOOLEAN DEFAULT FALSE
 );
 
 -- Create sessions table
@@ -49,7 +50,8 @@ CREATE TABLE IF NOT EXISTS database_queries (
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
     "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    "isActive" BOOLEAN DEFAULT TRUE
+    "isActive" BOOLEAN DEFAULT TRUE,
+    "isDeleted" BOOLEAN DEFAULT FALSE
 );
 
 -- Create sybase_databases table
@@ -67,7 +69,8 @@ CREATE TABLE sybase_databases (
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
     "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    "isActive" BOOLEAN DEFAULT TRUE
+    "isActive" BOOLEAN DEFAULT TRUE,
+    "isDeleted" BOOLEAN DEFAULT FALSE
 );
 
 -- Constraints
@@ -83,16 +86,17 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires);
 
 -- Create default admin user (password: admin123)
 -- Using pgcrypto to hash password with bcrypt
-INSERT INTO admin_users (username, password, role, "isActive")
+INSERT INTO admin_users (username, password, role, "isActive", "isDeleted")
 VALUES (
     'admin',
     crypt('admin123', gen_salt('bf', 10)),
     'admin',
+    TRUE,
     FALSE
 ) ON CONFLICT (username) DO NOTHING;
 
 -- Sample Sybes_database data
-INSERT INTO sybase_databases (conn_name, host, port, database_name, username, password, "isActive")
+INSERT INTO sybase_databases (conn_name, host, port, database_name, username, password, "isActive", "isDeleted")
 VALUES (
     'Sybase Database',
     'localhost',
@@ -100,15 +104,17 @@ VALUES (
     'sample_db',
     'sa',
     'password',
+    TRUE,
     FALSE
 ) ON CONFLICT (conn_name) DO NOTHING;
 
 -- Sample database_queries data
-INSERT INTO database_queries (name, description, query_text, "isActive" )
+INSERT INTO database_queries (name, description, query_text, "isActive", "isDeleted"  )
 VALUES (
     'Sample Query',
     'This is a sample query',
     'SELECT * FROM sample_table',
+    FALSE,
     FALSE
 ) ON CONFLICT (name) DO NOTHING;
 
@@ -130,14 +136,6 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE OR REPLACE FUNCTION update_deletedAt_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW."deletedAt" = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
 CREATE OR REPLACE FUNCTION update_createdBy_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -154,14 +152,6 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-
-CREATE OR REPLACE FUNCTION update_deletedBy_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW."deletedBy" = (SELECT id FROM admin_users WHERE username = current_user)::INTEGER;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
 
 -- admin users triggers
 CREATE TRIGGER update_admin_users_createdAt
@@ -184,17 +174,6 @@ CREATE TRIGGER update_admin_users_updatedBy
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedBy_column();
 
-
-CREATE TRIGGER update_admin_users_deletedBy
-    BEFORE UPDATE ON admin_users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedBy_column();
-
-CREATE TRIGGER update_admin_users_deletedAt
-    BEFORE UPDATE ON admin_users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedAt_column();
-
 -- database_queries triggers
 CREATE TRIGGER update_database_queries_createdAt
     BEFORE INSERT ON database_queries
@@ -216,16 +195,6 @@ CREATE TRIGGER update_database_queries_updatedBy
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedBy_column();
 
-CREATE TRIGGER update_database_queries_deletedBy
-    BEFORE UPDATE ON database_queries
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedBy_column();
-
-CREATE TRIGGER update_database_queries_deletedAt
-    BEFORE UPDATE ON database_queries
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedAt_column();
-
 -- sybase_databases triggers
 CREATE TRIGGER update_sybase_databases_updatedAt
     BEFORE UPDATE ON sybase_databases
@@ -246,16 +215,6 @@ CREATE TRIGGER update_sybase_databases_updatedBy
     BEFORE UPDATE ON sybase_databases
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedBy_column();
-
-CREATE TRIGGER update_sybase_databases_deletedBy
-    BEFORE UPDATE ON sybase_databases
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedBy_column();
-
-CREATE TRIGGER update_sybase_databases_deletedAt
-    BEFORE UPDATE ON sybase_databases
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedAt_column();
 
 -- audit_trails triggers
 CREATE TRIGGER update_audit_trails_createdAt

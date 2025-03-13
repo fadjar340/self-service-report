@@ -121,8 +121,13 @@ DatabaseQuery.init({
     isActive: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true,
         field: 'isActive'
+    },
+    isDeleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false,
+        field: 'isDeleted'
     }
 }, {
     sequelize,
@@ -184,7 +189,8 @@ DatabaseQuery.init({
                     details: {
                         queryId: query.id,
                         name: query.name,
-                        isActive: query.isActive
+                        isActive: query.isActive,
+                        isDeleted: true
                     }
                 });
             } catch (error) {
@@ -207,9 +213,9 @@ DatabaseQuery.associate = (models) => {
 };
 
 // Static method to find query by name
-DatabaseQuery.findByName = async function(name) {
+DatabaseQuery.findOneById = async function(id) {
     return this.findOne({
-        where: { name },
+        where: { id },
         include: [
             {
                 model: sequelize.models.AdminUser,
@@ -233,7 +239,8 @@ DatabaseQuery.searchQueries = async function(options = {}) {
         limit = 10, 
         offset = 0,
         startDate,
-        endDate
+        endDate,
+        deleted = false
     } = options;
 
     const where = {};
@@ -244,13 +251,15 @@ DatabaseQuery.searchQueries = async function(options = {}) {
             { name: { [Op.iLike]: `%${search}%` } },
             { description: { [Op.iLike]: `%${search}%` } },
             { queryText: { [Op.iLike]: `%${search}%` } },
-            { isActive: { [Op.eq]: search === 'active' ? true : search === 'inactive' ? false : null } }
+            { isActive: { [Op.eq]: search === 'active' ? true : search === 'inactive' ? false : null } },
+            { isDeleted: { [Op.eq]: search === 'delete' ? true : search === 'undelete' ? false : null } }
         ];
     }
 
     // Add user filter
     if (userId) {
         where.createdBy = userId;
+        where.isDeleted = deleted;    
     }
 
     // Add date range filter
@@ -258,6 +267,11 @@ DatabaseQuery.searchQueries = async function(options = {}) {
         where.createdAt = {};
         if (startDate) where.createdAt[Op.gte] = startDate;
         if (endDate) where.createdAt[Op.lte] = endDate;
+    }
+    
+    // Add deleted query
+    if (deleted) {
+        where.isDeleted = deleted;
     }
 
     return this.findAndCountAll({
@@ -280,4 +294,4 @@ DatabaseQuery.searchQueries = async function(options = {}) {
     });
 };
 
-module.exports = DatabaseQuery;
+module.exports = DatabaseQuery

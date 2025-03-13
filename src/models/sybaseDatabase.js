@@ -26,8 +26,8 @@ class SybaseDatabase extends Model {
 
     // Helper method to get safe database info (without credentials)
     toSafeObject() {
-        const { conn_name, host, port, database_name, username, createdAt, createdBy, updatedAt, updatedBy, deletedAt, deletedBy, isActive } = this;
-        return { conn_name, host, port, database_name, username, createdAt, createdBy, updatedAt, updatedBy, deletedAt, deletedBy, isActive }; // Exclude sensitive info
+        const { id, conn_name, host, port, database_name, username, createdAt, createdBy, updatedAt, updatedBy, deletedAt, deletedBy, isActive, isDeleted } = this;
+        return { id,conn_name, host, port, database_name, username, createdAt, createdBy, updatedAt, updatedBy, deletedAt, deletedBy, isActive, isDeleted }; // Exclude sensitive info
     }
 }
 
@@ -119,26 +119,18 @@ SybaseDatabase.init({
     },
     password: {
         type: DataTypes.STRING,
-        allowNull: false,
-        field: 'password',
-        validate: {
-            notNull: {
-                msg: 'Password is required'
-            },
-            notEmpty: {
-                msg: 'Password cannot be empty'
-            }
-        }
+        allowNull: true,
+        field: 'password'
     },
     createdAt: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
         defaultValue: DataTypes.NOW,
         field: 'createdAt'
     },
     updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
         defaultValue: DataTypes.NOW,
         field: 'updatedAt'
     },
@@ -164,9 +156,13 @@ SybaseDatabase.init({
     },
     isActive: {
         type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
+        allowNull: true,
         field: 'isActive'
+    },
+    isDeleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        field: 'isDeleted'
     }
 }, {
     sequelize,
@@ -179,7 +175,7 @@ hooks: {
     afterCreate: async (database, options) => {
         const session = options.session || {};
         await AuditTrail.logAction({
-            conn_name: session.user?.conn_name,
+            conn_name: session.user?.id,
             action: 'CREATE_DATABASE',
             resource: 'SYBASE_DATABASE',
             ipAddress: session.ip,
@@ -192,13 +188,14 @@ hooks: {
                 createdAt: database.createdAt,
                 createdBy: database.createdBy,
                 isActive: database.isActive
+
             }
         });
     },
     afterUpdate: async (database, options) => {
         const session = options.session || {};
         await AuditTrail.logAction({
-            conn_name: session.user?.conn_name,
+            conn_name: session.user?.id,
             action: 'UPDATE_DATABASE',
             resource: 'SYBASE_DATABASE',
             ipAddress: session.ip,
@@ -218,7 +215,7 @@ hooks: {
     beforeDestroy: async (database, options) => {
         const session = options.session || {};
         await AuditTrail.logAction({
-            conn_name: session.user?.conn_name,
+            conn_name: session.user?.id,
             action: 'DELETE_DATABASE',
             resource: 'SYBASE_DATABASE',
             ipAddress: session.ip,
@@ -230,22 +227,29 @@ hooks: {
                 username: database.username,
                 deletedBy: database.deletedBy,
                 deletedAt: database.deletedAt,
-                isActive: database.isActive
+                isActive: database.isActive,
+                isDeleted: database.isDeleted
             }
         });
     }
 }});
 
 // Static method to find database by name
-SybaseDatabase.findByName = async function (name) {
+SybaseDatabase.findById = async function (id) {
     return this.findOne({
-        where: { conn_name: name }
+        where: { 
+            id: id,
+            isDeleted: false
+        }
     });
 };
 
 // Static method to find database by name
 SybaseDatabase.findAllActive = async function () {
     return this.findAll({
+        where: {
+            isDeleted: false
+        }
     });
 };
 
@@ -259,7 +263,7 @@ SybaseDatabase.testConnection = async function (config) {
             authentication: {
                 type: 'default',
                 options: {
-                    userName: config.username, // Use 'userName' instead of 'user'
+                    userName: config.user_name, // Use 'userName' instead of 'user'
                     password: config.password
                 }
             },

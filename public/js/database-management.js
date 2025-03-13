@@ -1,5 +1,5 @@
 // Global variables
-let selectedDatabaseConnName = null;
+let selectedDatabaseId = null;
 
 // DOM Elements
 const elements = {
@@ -9,7 +9,6 @@ const elements = {
     closeModalBtn: document.getElementById('closeModalBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
     updateModal: document.getElementById('updateModal'),
-    updateDatabaseForm: document.getElementById('updateDatabaseForm'),
     closeUpdateModalBtn: document.getElementById('closeUpdateModalBtn'),
     cancelUpdateBtn: document.getElementById('cancelUpdateBtn'),
     confirmUpdateBtn: document.getElementById('confirmUpdateBtn'),
@@ -18,6 +17,8 @@ const elements = {
     cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
     deleteModal: document.getElementById('deleteModal'),
     databaseModal: document.getElementById('databaseModal'),
+    updateForm: document.getElementById('updateForm'),
+    closeUpdateModalBtn: document.getElementById('closeUpdateModalBtn'),
     databasesTableBody: document.getElementById('databasesTableBody'),
     //testDatabaseConnectionBtn: document.getElementById('testDatabaseConnectionBtn')
 };
@@ -42,9 +43,8 @@ function setupEventListeners() {
     elements.cancelBtn.addEventListener('click', closeModal);
 
     // Update confirmation modal buttons
-    elements.closeUpdateModalBtn.addEventListener('click', closeUpdateModal);
     elements.cancelUpdateBtn.addEventListener('click', cancelUpdateModal);
-    elements.confirmUpdateBtn.addEventListener('click', handleDatabaseSubmit);
+    elements.updateForm.addEventListener('submit', handleDatabaseSubmit);
 
     // Delete confirmation modal buttons
     elements.closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
@@ -157,26 +157,25 @@ function displayDatabases(databases) {
     }
 
     elements.databasesTableBody.innerHTML = databases.map(database => `
-        <tr>
+        <tr data-id="${database.id}" data-is-deleted="${database.isDeleted}">
             <td>${database.conn_name}</td>
             <td>${database.host}</td>
             <td>${database.port}</td>
             <td>${database.database_name}</td>
             <td>${database.username}</td>
-            <td>${database.password}</td>
             <td>${database.isActive ? 'Yes' : 'No'}</td>
             <td>
                 <div class="action-buttons">
                     <!-- Test Connection Button -->
-                    <button class="btn btn-secondary" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-is-active="${database.isActive}">
+                    <button class="btn btn-secondary" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}">
                         Test Connection
                     </button>
                     <!-- Update Button -->
-                    <button class="btn btn-secondary update-database-btn" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-is-active="${database.isActive}">
-                        Update
+                    <button class="btn btn-secondary update-database-btn" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}" data-is-active="${database.isActive}">
+                        Edit
                     </button>
                     <!-- Delete Button -->
-                    <button class="btn btn-danger delete-database-btn" data-conn-name="${database.conn_name}">
+                    <button class="btn btn-danger delete-database-btn" data-id="${database.id}" data-isDeleted="${database.isDeleted}">
                         Delete
                     </button>
                 </div>
@@ -187,130 +186,161 @@ function displayDatabases(databases) {
     // Add event listeners to update buttons
     document.querySelectorAll('.update-database-btn').forEach(button => {
         button.addEventListener('click', () => {
-            const connName = button.dataset.connName;
-            const host = button.dataset.host;
-            const port = button.dataset.port;
-            const databaseName = button.dataset.databaseName;
-            const username = button.dataset.username;
-            const isActive = button.dataset.isActive;
-
-            // Call the function to show the update modal with the selected database's data
-            showUpdateDatabaseModal(connName, host, port, databaseName, username, isActive);
+            selectedDatabaseId = button.dataset.id;
+            console.log('Selected ID:', selectedDatabaseId);
+            showUpdateDatabaseModal(selectedDatabaseId);
         });
     });
 
     // Add event listeners to delete buttons
     document.querySelectorAll('.delete-database-btn').forEach(button => {
         button.addEventListener('click', () => {
-            selectedDatabaseConnName = button.dataset.connName;
-            showDeleteConfirmation(selectedDatabaseConnName);
+            selectedDatabaseId = button.dataset.id;
+            console.log('Deleting database with ID:', id);
+            showDeleteConfirmation(selectedDatabaseId);
         });
     });
 }
 
 // Show add database modal
 function showAddDatabaseModal() {
-    selectedDatabaseConnName = null;
+    selectedDatabaseId = null;
     document.getElementById('modalTitle').textContent = 'Add Database';
     elements.databaseForm.reset();
     elements.databaseModal.style.display = 'block';
 }
 
+
 // Show update database modal
-function showUpdateDatabaseModal(connName, host, port, databaseName, username, isActive) {
-    // Set the selected database connection name
-    selectedDatabaseConnName = connName;
+function showUpdateDatabaseModal(id) {
 
-    // Populate the form fields with the selected database's data
-    document.getElementById('conn_name').value = connName;
-    document.getElementById('host').value = host;
-    document.getElementById('port').value = port;
-    document.getElementById('database_name').value = databaseName;
-    document.getElementById('username').value = username;
-    document.getElementById('isActive').checked = isActive === 'true';
 
-    // Set the modal title
-    document.getElementById('modalTitle').textContent = 'Update Database';
+    // Find the row using data-id
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (!row) {
+        console.error('Database row not found for ID:', id);
+        return;
+    }
 
-    // Display the modal
-    //elements.databaseForm.reset();
+    // Get data from button dataset instead of table cells
+    const button = row.querySelector('.update-database-btn');
+    selectedDatabaseId = id;
+
+    // Populate form fields
+    elements.updateForm.elements.conn_name.value = button.dataset.conn_name;
+    elements.updateForm.elements.host.value = button.dataset.host;
+    elements.updateForm.elements.port.value = button.dataset.port;
+    elements.updateForm.elements.database_name.value = button.dataset.database_name;
+    elements.updateForm.elements.username.value = button.dataset.username;
+    elements.updateForm.elements.password.value = ''; // Clear password field
+    elements.updateForm.elements.isActive.checked = button.dataset.isActive === 'true';
+
     elements.updateModal.style.display = 'block';
 }
+
+
+
 
 // Close modal
 function closeModal() {
     elements.databaseModal.style.display = 'none';
     elements.updateModal.style.display = 'none';
     elements.databaseForm.reset();
-    selectedDatabaseConnName = null;
-}
-
-// Close update confirmation modal
-function closeUpdateModal() {
-    elements.updateModal.style.display = 'none';
-    selectedDatabaseConnName = null;
+    //elements.updateDatabaseForm.reset();
+    selectedDatabaseId = null;
 }
 
 // Cancel update confirmation modal
 function cancelUpdateModal() {
     elements.updateModal.style.display = 'none';
-    selectedDatabaseConnName = null;
+    selectedDatabaseId = null;
 }
 
 // Show delete confirmation modal
-function showDeleteConfirmation(connName) {
-    selectedDatabaseConnName = connName;
+function showDeleteConfirmation(id) {
+    selectedDatabaseId = id;
     elements.deleteModal.style.display = 'block';
 }
 
 // Close delete confirmation modal
 function closeDeleteModal() {
     elements.deleteModal.style.display = 'none';
-    selectedDatabaseConnName = null;
+    selectedDatabaseId = null;
 }
 
 // Cancel delete confirmation modal
 function cancelDeleteModal() {
     elements.deleteModal.style.display = 'none';
-    selectedDatabaseConnName = null;
+    selectedDatabaseId = null;
 }
 
 // Handle form submission for add/update database
+// Handle form submission for add/update database
 async function handleDatabaseSubmit(event) {
     event.preventDefault();
-    const formData = new FormData(event.target);
+    const form = event.target;
+    const formData = new FormData(form);
+    const isUpdate = !!selectedDatabaseId;
+
+    // Prepare base data object
     const databaseData = {
-        conn_name: formData.get('conn_name'), // Corrected to 'conn_name'
+        conn_name: formData.get('conn_name'),
         host: formData.get('host'),
-        port: parseInt(formData.get('port')),
+        port: formData.get('port') ? parseInt(formData.get('port')) : null,
         database_name: formData.get('database_name'),
         username: formData.get('username'),
-        password: formData.get('password'),
-        isActive: formData.get('isActive') === 'true'
+        isActive: formData.get('isActive') === 'on'
     };
 
+    // Only add password if it's provided
+    const password = formData.get('password');
+    if (password) {
+        databaseData.password = password;
+    }
+
     try {
-        const isUpdate = !!selectedDatabaseConnName; // Check if updating
         const url = isUpdate 
-            ? `/api/sybase/updateDatabase/${selectedDatabaseConnName}` 
+            ? `/api/sybase/updateDatabase/${selectedDatabaseId}`
             : '/api/sybase/saveDatabase';
-        
+
+        const method = isUpdate ? 'PUT' : 'POST';
+
+        // For updates, filter out unchanged fields
+        let requestData = databaseData;
+        if (isUpdate) {
+            requestData = {};
+            
+            // Only include fields that have values
+            for (const [key, value] of Object.entries(databaseData)) {
+                if (value !== null && value !== undefined && value !== '') {
+                    requestData[key] = value;
+                }
+            }
+            
+            // Add password separately if provided
+            if (password) {
+                requestData.password = password;
+            }
+
+            if (Object.keys(requestData).length === 0) {
+                throw new Error('No changes detected');
+            }
+        }
+
         const response = await fetch(url, {
-            method: isUpdate ? 'PUT' : 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            method,
+            headers: {'Content-Type': 'application/json'},
             credentials: 'include',
-            body: JSON.stringify(databaseData)
+            body: JSON.stringify(requestData)
         });
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to save database');
+            throw new Error(error.message || 'Operation failed');
         }
 
         closeModal();
-        selectedDatabaseConnName = null; // Reset the selected database connection name
+        selectedDatabaseId = null; 
         loadDatabases();
         showSuccess(isUpdate ? 'Database updated successfully' : 'Database created successfully');
     } catch (error) {
@@ -322,7 +352,7 @@ async function handleDatabaseSubmit(event) {
 // Confirm and execute database deletion
 async function confirmDelete() {
     try {
-        const response = await fetch(`/api/sybase/deleteDatabase/${selectedDatabaseConnName}`, {
+        const response = await fetch(`/api/sybase/deleteDatabase/${selectedDatabaseId}`, {
             method: 'DELETE',
             credentials: 'include'
         });
@@ -333,6 +363,7 @@ async function confirmDelete() {
         }
 
         closeDeleteModal();
+        selectedDatabaseId = null; 
         loadDatabases();
         showSuccess('Database deleted successfully');
     } catch (error) {

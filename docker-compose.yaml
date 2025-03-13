@@ -1,45 +1,55 @@
-version: '3'
-services:
-  postgres:
-    image: postgres:15
-    restart: always
-    user: root
-    environment:
-      POSTGRES_PASSWORD: supersecret
-# //     PG_USER: ${PG_USER}
-#   /   PG_PASSWORD: ${PG_PASSWORD}
-#      PG_DATABASE: ${PG_DATABASE}
-    ports:
-      - "${PG_PORT}:5432"
-    volumes:
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    networks:
-      - app-network
+version: '3.8'
 
+services:
   app:
-    build: .  # Build the combined image using the Dockerfile in the root
-    env_file:
-      - .env
-    environment:
-      OAUTH2_DOMAIN: ${OAUTH2_DOMAIN}
-      OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID}
-      OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET}
-      OAUTH2_TOKEN_URL: ${OAUTH2_TOKEN_URL}
-      PG_USER: ${PG_USER}
-      PG_HOST: ${PG_HOST}
-      PG_DATABASE: ${PG_DATABASE}
-      PG_PASSWORD: ${PG_PASSWORD}
-      PG_PORT: ${PG_PORT}
-      JWT_SECRET: ${JWT_SECRET}
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=self_service
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - SESSION_SECRET=your-secret-key-here
+
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
-      - postgres
+      db:
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=self_service
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
 
 volumes:
-  postgres-data:
+  postgres_data:
 
 networks:
   app-network:
+    driver: bridge

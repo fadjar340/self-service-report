@@ -3,48 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - Self-Service Report</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Database Management</title>
+    <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Font Awesome for icons -->
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>
-                <i class="fas fa-users-cog"></i>
-                User Management
-            </h1>
-            <div class="header-actions">
-                <span class="user-info">
-                    <i class="fas fa-user"></i>
-                    <span id="username">Loading...</span>
-                </span>
-                <div class="admin-menu">
-                    <button id="adminDashboardBtn" class="btn-secondary">
-                        <i class="fas fa-tachometer-alt"></i>
-                        Admin Dashboard
-                    </button>
-                    <button id="logoutBtn" class="danger">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </header>
+   <!-- Sidebar -->
+   <aside class="sidebar">
+    <div class="sidebar-header">
+        <h2>Menu</h2>
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li>
+                <a href="/admin.html">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/database-management.html">
+                    <i class="fas fa-database"></i> Database Management
+                </a>
+            </li>
+            <li>
+                <a href="/health-check.html">
+                    <i class="fas fa-heartbeat"></i> Health Check Monitoring
+                </a>
+            </li>
+            <li>
+                <a href="/audit-trail.html">
+                    <i class="fas fa-clipboard-list"></i> Audit Trail Query
+                </a>
+            </li>
+            <li>
+                <a href="/user-management.html">
+                    <i class="fas fa-users-cog"></i> User Management
+                </a>
+            </li>
+            <li>
+                <a href="/database.html">
+                    <i class="fas fa-code"></i> Query Management
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>
 
-        <main class="user-management">
-            <div class="action-bar">
-                <button id="addUserBtn" class="btn-primary">
-                    <i class="fas fa-user-plus"></i>
-                    Add User
-                </button>
-            </div>
+<!-- Main Content -->
+<main class="main-content">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button id="sidebarToggle" class="btn btn-icon">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1>Admin User Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span class="user-info">Welcome, <span id="username"></span></span>
+            <span class="user-role">Role: <span id="userRole"></span></span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button> <!-- Ensure this ID matches -->
+        </div>
+    </header>
+
+
+    <!-- Database Table -->
+    <div class="page-content">
+        <div class="action-bar">
+            <button id="addUserBtn" class="btn btn-primary">
+                Add User
+            </button>
+        </div>
 
             <div class="users-table-container">
-                <table class="users-table">
+                <table class="table-responsive">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Username</th>
                             <th>Role</th>
                             <th>Created At</th>
@@ -68,7 +102,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 id="modalTitle">Add User</h2>
-                    <button id="closeModalBtn" class="close-btn">&times;</button>
+                    <button id="closeModalBtn" class="btn close">&times;</button>
                 </div>
                 <form id="userForm">
                     <div class="form-group">
@@ -88,12 +122,10 @@
                         </select>
                     </div>
                     <div class="form-actions">
-                        <button type="button" id="cancelBtn" class="btn-secondary">
-                            <i class="fas fa-times"></i>
+                        <button type="button" id="cancelModalBtn" class="btn btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-save"></i>
+                        <button type="submit" id="editUserBtn" class="btn btn-primary">
                             Save
                         </button>
                     </div>
@@ -111,22 +143,26 @@
                 <p>Are you sure you want to delete this user? This action cannot be undone.</p>
                 <p class="warning-text">Note: You cannot delete your own account.</p>
                 <div class="form-actions">
-                    <button id="cancelDeleteBtn" class="btn-secondary">
-                        <i class="fas fa-times"></i>
+                    <button id="cancelDeleteBtn" class="bt. btn-secondary">
                         Cancel
                     </button>
-                    <button id="confirmDeleteBtn" class="btn-delete">
-                        <i class="fas fa-trash-alt"></i>
+                    <button id="confirmDeleteBtn" class="btn btn-delete btn-danger">
                         Delete
                     </button>
                 </div>
             </div>
         </div>
 
-        <footer class="dashboard-footer">
-            <p>© 2025 Self-Service Report System. All rights reserved.</p>
-        </footer>
+    <!-- Loading Spinner -->
+    <div id="loader" class="hidden">
+        <div class="spinner"></div>
     </div>
+
+    <footer class="dashboard-footer">
+        <p>© 2025 Self-Service Report System. All rights reserved.</p>
+    </footer>
+
+    <script src="js/app.js"></script>
     <script src="js/user-management.js"></script>
 </body>
 </html>

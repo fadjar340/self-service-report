@@ -82,7 +82,6 @@
                         <th>Port</th>
                         <th>Database Name</th>
                         <th>Username</th>
-                        <th>Password</th>
                         <th>Active</th>
                         <th>Actions</th>
                     </tr>
@@ -121,16 +120,12 @@
                     <input type="text" id="username" name="username" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">Database Password</label>
-                    <input type="password" id="password" name="password" required minlength="3">
-                </div>
-                <div class="form-group">
-                    <label for="isActive">Active</label>
-                    <input type="checkbox" id="isActive" name="isActive">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
                 <button type="button" id="cancelBtn" class="btn btn-primary">Cancel</button>
-                <button type="button" id="testDatabaseConnectionBtn" class="btn btn-primary">Test Connection</button>
+                <button type="submit" id="testDatabaseConnectionBtn" class="btn btn-primary">Test Connection</button>
             </form>
         </div>
     </div>
@@ -140,7 +135,7 @@
         <div class="modal-content">
             <span id="closeUpdateModalBtn" class="btn close">&times;</span>
             <h2 id="modalTitle">Update Database</h2>
-            <form id="databaseForm"> <!-- Use the same form ID as the add modal -->
+            <form id="updateForm"> <!-- Use the same form ID as the add modal -->
                 <div class="form-group">
                     <label for="conn_name">Connection Name</label>
                     <input type="text" id="conn_name" name="conn_name" required minlength="3">
@@ -163,13 +158,13 @@
                 </div>
                 <div class="form-group">
                     <label for="password">Database Password</label>
-                    <input type="password" id="password" name="password" required minlength="3">
+                    <input type="password" id="password" name="password">
                 </div>
                 <div class="form-group">
                     <label for="isActive">Active</label>
                     <input type="checkbox" id="isActive" name="isActive">
                 </div>
-                <button type="button" id="confirmUpdateBtn" class="btn btn-primary">Confirm Update</button>
+                <button type="submit" id="confirmUpdateBtn" class="btn btn-primary">Confirm Update</button>
                 <button type="button" id="cancelUpdateBtn" class="btn btn-primary">Cancel</button>
             </form>
         </div>
@@ -181,7 +176,7 @@
             <span id="closeDeleteModalBtn" class="close">&times;</span>
             <h2>Confirm Deletion</h2>
             <p>Are you sure you want to delete this database?</p>
-            <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+            <button type="submit" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
             <button id="cancelDeleteBtn" class="btn btn-secondary">Cancel</button>
         </div>
     </div>

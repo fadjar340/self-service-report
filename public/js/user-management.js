@@ -3,18 +3,19 @@ let selectedUserId = null;
 
 // DOM Elements
 const elements = {
-    adminDashboardBtn: document.getElementById('adminDashboardBtn'),
+    //adminDashboardBtn: document.getElementById('adminDashboardBtn'),
     mainDashboardBtn: document.getElementById('mainDashboardBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
     addUserBtn: document.getElementById('addUserBtn'),
     userForm: document.getElementById('userForm'),
     closeModalBtn: document.getElementById('closeModalBtn'),
-    cancelBtn: document.getElementById('cancelBtn'),
+    cancelModalBtn: document.getElementById('cancelBtn'),
     closeDeleteModalBtn: document.getElementById('closeDeleteModalBtn'),
     cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
     confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
     userModal: document.getElementById('userModal'),
     deleteModal: document.getElementById('deleteModal'),
+    editUserBtn: document.getElementById('editUser'),
     usersTableBody: document.getElementById('usersTableBody')
 };
 
@@ -27,17 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupEventListeners() {
     // Navigation buttons
-    elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
+    //elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
     //elements.mainDashboardBtn.addEventListener('click', () => window.location.href = '/dashboard.html');
     elements.logoutBtn.addEventListener('click', logout);
 
     // User management buttons
     elements.addUserBtn.addEventListener('click', showAddUserModal);
     elements.userForm.addEventListener('submit', handleUserSubmit);
+    elements.editUserBtn.addEventListener('click', editUser);
 
     // Modal close buttons
     elements.closeModalBtn.addEventListener('click', closeModal);
-    elements.cancelBtn.addEventListener('click', closeModal);
+    elements.cancelModalBtn.addEventListener('click', closeModal);
     elements.closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
     elements.cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     elements.confirmDeleteBtn.addEventListener('click', confirmDelete);
@@ -100,12 +102,10 @@ function displayUsers(users) {
             <td>${new Date(user.createdAt).toLocaleString()}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-edit" data-user-id="${user.id}" data-username="${user.username}" data-role="${user.role}">
-                        <i class="fas fa-edit"></i>
+                    <button class="btn btn-edit" data-user-id="${user.id}" data-username="${user.username}" data-role="${user.role}">
                         Edit
                     </button>
-                    <button class="btn-delete" data-user-id="${user.id}">
-                        <i class="fas fa-trash-alt"></i>
+                    <button class="btn btn-delete btn-danger" data-user-id="${user.id}">
                         Delete
                     </button>
                 </div>
