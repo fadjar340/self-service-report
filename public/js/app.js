@@ -47,7 +47,7 @@ async function checkAuth() {
             updateUserInfo(data.user);
         }
     } catch (error) {
-        console.error('Auth check error:', error);
+        //console.error('Auth check error:', error);
         // Handle error but don't redirect if already on login page
         if (!window.location.pathname.includes('index.html')) {
             window.location.href = '/index.html';
@@ -92,7 +92,7 @@ async function login(event) {
             window.location.href = '/user.html';
         }
     } catch (error) {
-        console.error('Login error:', error);
+        //console.error('Login error:', error);
         errorDiv.textContent = error.message || 'Login failed. Please try again.';
         errorDiv.style.display = 'block';
     }

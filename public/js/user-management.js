@@ -9,14 +9,14 @@ const elements = {
     addUserBtn: document.getElementById('addUserBtn'),
     userForm: document.getElementById('userForm'),
     closeModalBtn: document.getElementById('closeModalBtn'),
-    cancelModalBtn: document.getElementById('cancelBtn'),
     closeDeleteModalBtn: document.getElementById('closeDeleteModalBtn'),
     cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
     confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
     userModal: document.getElementById('userModal'),
     deleteModal: document.getElementById('deleteModal'),
-    editUserBtn: document.getElementById('editUser'),
-    usersTableBody: document.getElementById('usersTableBody')
+    usersTableBody: document.getElementById('usersTableBody'),
+    cancelModalBtn: document.getElementById('cancelModalBtn'), // Was 'cancelBtn'
+    editUserBtn: document.getElementById('editUserBtn'), // Was 'editUser'
 };
 
 // Event Listeners
@@ -35,7 +35,6 @@ function setupEventListeners() {
     // User management buttons
     elements.addUserBtn.addEventListener('click', showAddUserModal);
     elements.userForm.addEventListener('submit', handleUserSubmit);
-    elements.editUserBtn.addEventListener('click', editUser);
 
     // Modal close buttons
     elements.closeModalBtn.addEventListener('click', closeModal);
@@ -65,7 +64,7 @@ async function checkAuthAndRedirect() {
         // Display username
         document.getElementById('username').textContent = data.user.username;
     } catch (error) {
-        console.error('Auth check error:', error);
+        //console.error('Auth check error:', error);
         window.location.href = '/index.html';
     }
 }

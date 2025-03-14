@@ -18,7 +18,6 @@ const elements = {
     deleteModal: document.getElementById('deleteModal'),
     databaseModal: document.getElementById('databaseModal'),
     updateForm: document.getElementById('updateForm'),
-    closeUpdateModalBtn: document.getElementById('closeUpdateModalBtn'),
     databasesTableBody: document.getElementById('databasesTableBody'),
     //testDatabaseConnectionBtn: document.getElementById('testDatabaseConnectionBtn')
 };
@@ -143,7 +142,7 @@ async function loadDatabases() {
 
         displayDatabases(result.databases);
     } catch (error) {
-        console.error('Error loading databases:', error);
+        //console.error('Error loading databases:', error);
         showError('Failed to load databases');
     }
 }
@@ -151,7 +150,7 @@ async function loadDatabases() {
 // Display databases in the table
 function displayDatabases(databases) {
     if (!databases || !Array.isArray(databases)) {
-        console.error('Expected an array of databases, but received:', databases);
+        //console.error('Expected an array of databases, but received:', databases);
         showError('Invalid data format');
         return;
     }
@@ -171,11 +170,11 @@ function displayDatabases(databases) {
                         Test Connection
                     </button>
                     <!-- Update Button -->
-                    <button class="btn btn-secondary update-database-btn" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}" data-is-active="${database.isActive}">
+                    <button class="btn btn-secondary update-database-btn" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}" data-is-active="${database.isActive}" data-is-deleted="${database.isDeleted}">
                         Edit
                     </button>
                     <!-- Delete Button -->
-                    <button class="btn btn-danger delete-database-btn" data-id="${database.id}" data-isDeleted="${database.isDeleted}">
+                    <button class="btn btn-danger delete-database-btn" data-id="${database.id}" data-is-deleted="${database.isDeleted}">
                         Delete
                     </button>
                 </div>
@@ -187,7 +186,7 @@ function displayDatabases(databases) {
     document.querySelectorAll('.update-database-btn').forEach(button => {
         button.addEventListener('click', () => {
             selectedDatabaseId = button.dataset.id;
-            console.log('Selected ID:', selectedDatabaseId);
+            //console.log('Selected ID:', selectedDatabaseId);
             showUpdateDatabaseModal(selectedDatabaseId);
         });
     });
@@ -196,7 +195,7 @@ function displayDatabases(databases) {
     document.querySelectorAll('.delete-database-btn').forEach(button => {
         button.addEventListener('click', () => {
             selectedDatabaseId = button.dataset.id;
-            console.log('Deleting database with ID:', id);
+            //console.log('Deleting database with ID:', id);
             showDeleteConfirmation(selectedDatabaseId);
         });
     });
@@ -218,7 +217,7 @@ function showUpdateDatabaseModal(id) {
     // Find the row using data-id
     const row = document.querySelector(`tr[data-id="${id}"]`);
     if (!row) {
-        console.error('Database row not found for ID:', id);
+        //console.error('Database row not found for ID:', id);
         return;
     }
 
@@ -227,10 +226,10 @@ function showUpdateDatabaseModal(id) {
     selectedDatabaseId = id;
 
     // Populate form fields
-    elements.updateForm.elements.conn_name.value = button.dataset.conn_name;
+    elements.updateForm.elements.conn_name.value = button.dataset.connName;
     elements.updateForm.elements.host.value = button.dataset.host;
     elements.updateForm.elements.port.value = button.dataset.port;
-    elements.updateForm.elements.database_name.value = button.dataset.database_name;
+    elements.updateForm.elements.database_name.value = button.dataset.databaseName;
     elements.updateForm.elements.username.value = button.dataset.username;
     elements.updateForm.elements.password.value = ''; // Clear password field
     elements.updateForm.elements.isActive.checked = button.dataset.isActive === 'true';
@@ -245,13 +244,13 @@ function showUpdateDatabaseModal(id) {
 function closeModal() {
     elements.databaseModal.style.display = 'none';
     elements.updateModal.style.display = 'none';
-    elements.databaseForm.reset();
-    //elements.updateDatabaseForm.reset();
+    //elements.databaseForm.reset();
     selectedDatabaseId = null;
 }
 
 // Cancel update confirmation modal
 function cancelUpdateModal() {
+    elements.databaseModal.style.display = 'none';
     elements.updateModal.style.display = 'none';
     selectedDatabaseId = null;
 }
@@ -275,23 +274,21 @@ function cancelDeleteModal() {
 }
 
 // Handle form submission for add/update database
-// Handle form submission for add/update database
 async function handleDatabaseSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
     const isUpdate = !!selectedDatabaseId;
+  
+    // add new 14 March 09:48
+    const formValues = Object.fromEntries(formData.entries());
 
-    // Prepare base data object
     const databaseData = {
-        conn_name: formData.get('conn_name'),
-        host: formData.get('host'),
-        port: formData.get('port') ? parseInt(formData.get('port')) : null,
-        database_name: formData.get('database_name'),
-        username: formData.get('username'),
-        isActive: formData.get('isActive') === 'on'
-    };
-
+        ...formValues,
+        isActive: formValues.isActive === "true", // Convert to boolean
+        port: parseInt(formValues.port) || null   // Convert port to number
+      };
+  
     // Only add password if it's provided
     const password = formData.get('password');
     if (password) {
@@ -312,11 +309,16 @@ async function handleDatabaseSubmit(event) {
             
             // Only include fields that have values
             for (const [key, value] of Object.entries(databaseData)) {
-                if (value !== null && value !== undefined && value !== '') {
+                if (value !== null && value !== undefined && value !== '' && !(typeof value === 'boolean')){
                     requestData[key] = value;
                 }
             }
             
+              // Explicitly include isActive even if false
+             if (databaseData.isActive !== undefined) {
+               requestData.isActive = databaseData.isActive;
+             }
+
             // Add password separately if provided
             if (password) {
                 requestData.password = password;
@@ -391,7 +393,7 @@ async function logout() {
             credentials: 'include'
         });
     } catch (error) {
-        console.error('Logout error:', error);
+        //console.error('Logout error:', error);
     } finally {
         window.location.href = '/index.html';
     }

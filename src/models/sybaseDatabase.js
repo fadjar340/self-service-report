@@ -156,12 +156,14 @@ SybaseDatabase.init({
     },
     isActive: {
         type: DataTypes.BOOLEAN,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: null,
         field: 'isActive'
     },
     isDeleted: {
         type: DataTypes.BOOLEAN,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: false,
         field: 'isDeleted'
     }
 }, {
@@ -205,10 +207,11 @@ hooks: {
                 port: database.port,
                 database_name: database.database_name,
                 username: database.username,
+                isActive: database.isActive,
                 changes: database.changed(),
                 updatedBy: database.updatedBy,
                 updatedAt: database.updatedAt,
-                isActive: database.isActive
+                isDeleted: database.isDeleted
             }
         });
     },

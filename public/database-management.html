@@ -96,7 +96,7 @@
     <!-- Add Database Modal -->
     <div id="databaseModal" class="modal">
         <div class="modal-content">
-            <span id="closeModalBtn" class="btn close">&times;</span>
+            <span id="cancelBtn" class="btn close">&times;</span>
             <h2 id="modalTitle">Add Database</h2>
             <form id="databaseForm">
                 <div class="form-group">
@@ -123,8 +123,19 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" required>
                 </div>
+                <div class="form-group">
+                    <label for="isActive">Active</label>
+                    <!-- Hidden input ensures the field is always submitted -->
+                    <input type="hidden" name="isActive" value="false">
+                    <!-- Checkbox toggles the value between true/false -->
+                    <input type="checkbox" 
+                           id="isActive" 
+                           name="isActive" 
+                           value="true"
+                           onchange="this.previousElementSibling.value = this.checked">
+                  </div>
                 <button type="submit" class="btn btn-primary">Save</button>
-                <button type="button" id="cancelBtn" class="btn btn-primary">Cancel</button>
+                <button type="button" id="closeModalBtn" class="btn btn-primary">Cancel</button>
                 <button type="submit" id="testDatabaseConnectionBtn" class="btn btn-primary">Test Connection</button>
             </form>
         </div>
@@ -133,7 +144,7 @@
     <!-- Update Database Modal -->
     <div id="updateModal" class="modal"> <!-- Changed ID to match JavaScript -->
         <div class="modal-content">
-            <span id="closeUpdateModalBtn" class="btn close">&times;</span>
+            
             <h2 id="modalTitle">Update Database</h2>
             <form id="updateForm"> <!-- Use the same form ID as the add modal -->
                 <div class="form-group">
@@ -162,8 +173,15 @@
                 </div>
                 <div class="form-group">
                     <label for="isActive">Active</label>
-                    <input type="checkbox" id="isActive" name="isActive">
-                </div>
+                    <!-- Hidden input ensures the field is always submitted -->
+                    <input type="hidden" name="isActive" value="false">
+                    <!-- Checkbox toggles the value between true/false -->
+                    <input type="checkbox" 
+                           id="isActive" 
+                           name="isActive" 
+                           value="true"
+                           onchange="this.previousElementSibling.value = this.checked">
+                  </div>
                 <button type="submit" id="confirmUpdateBtn" class="btn btn-primary">Confirm Update</button>
                 <button type="button" id="cancelUpdateBtn" class="btn btn-primary">Cancel</button>
             </form>
@@ -192,6 +210,6 @@
 
     <!-- Scripts -->
     <script src="js/app.js"></script>
-    <script src="js/database-management.js"></script>
+    <script nonce="random1234" src="js/database-management.js"></script>
 </body>
 </html>

@@ -94,6 +94,7 @@ const updateDatabaseValidation = [
         .trim(),
     body('isActive')
         .optional()
+        .trim()
         .isBoolean()
         .withMessage('Status must be a boolean (true or false)')
 ];
@@ -103,6 +104,7 @@ const deleteDatabaseValidation = [
     param('id'),
     body('isDeleted')
         .optional()
+        .trim()
         .isBoolean()
         .withMessage('Status must be a boolean (true or false)')
 ];
@@ -130,8 +132,8 @@ router.post(
         // Set createdBy and updatedBy from the authenticated user
         req.body.createdBy = req.user.id; // Assuming req.user contains the authenticated user
         req.body.updatedBy = req.user.id;
-        req.body.isActive = true||false;
-        req.body.isDeleted = false;
+        //req.body.isActive = true||false;
+        //req.body.isDeleted = true||false;
         next();
     },
     sybaseController.saveDatabase
@@ -146,8 +148,8 @@ router.put(
         // Set updatedBy from the authenticated user
         req.body.updatedBy = req.user.id;
          // Assuming req.user contains the authenticated user
-        req.body.isActive = true||false;
-        req.body.isDeleted = false;
+        //req.body.isActive = true||false;
+        //req.body.isDeleted = true||false;
         next();
     },
     sybaseController.updateDatabase

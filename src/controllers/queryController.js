@@ -139,7 +139,8 @@ const saveQuery = async (req, res) => {
             description,
             queryText,
             createdBy: req.user.id,
-            updatedBy: req.user.id
+            updatedBy: req.user.id,
+            isDeleted: false
         });
 
         res.status(201).json({

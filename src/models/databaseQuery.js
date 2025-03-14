@@ -6,8 +6,8 @@ const logger = require('../utils/logger'); // Assuming you have a logger utility
 class DatabaseQuery extends Model {
     // Helper method to get safe query info
     toSafeObject() {
-        const {name, description, queryText,updatedAt,updatedBy,createdAt,createdBy,deletedAt, deletedBy,isActive } = this;
-        return { name, description, queryText, updatedAt,updatedBy,createdAt,createdBy,deletedAt, deletedBy,isActive };
+        const {name, description, queryText,updatedAt,updatedBy,createdAt,createdBy,deletedAt, deletedBy, isActive } = this;
+        return { name, description, queryText, updatedAt,updatedBy,createdAt,createdBy,deletedAt, deletedBy, isActive };
     }
 
     // Static method to validate query
@@ -252,14 +252,12 @@ DatabaseQuery.searchQueries = async function(options = {}) {
             { description: { [Op.iLike]: `%${search}%` } },
             { queryText: { [Op.iLike]: `%${search}%` } },
             { isActive: { [Op.eq]: search === 'active' ? true : search === 'inactive' ? false : null } },
-            { isDeleted: { [Op.eq]: search === 'delete' ? true : search === 'undelete' ? false : null } }
         ];
     }
 
     // Add user filter
     if (userId) {
-        where.createdBy = userId;
-        where.isDeleted = deleted;    
+        where.createdBy = userId;   
     }
 
     // Add date range filter
@@ -269,11 +267,6 @@ DatabaseQuery.searchQueries = async function(options = {}) {
         if (endDate) where.createdAt[Op.lte] = endDate;
     }
     
-    // Add deleted query
-    if (deleted) {
-        where.isDeleted = deleted;
-    }
-
     return this.findAndCountAll({
         where,
         limit,

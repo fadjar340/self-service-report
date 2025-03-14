@@ -3,12 +3,13 @@ const AdminUser = require('../models/adminUser');
 //const dbManager = require('../utils/dbManager');
 const AuditTrail = require('../models/auditTrail');
 const { authenticate, authorize } = require('./authController');
+const { Op } = require('sequelize');
 //const {} = require('../middleware/authMiddleware');
 
 // Save a new database
 const saveDatabase = async (req, res) => {
     try {
-        const { id, conn_name, host, port, database_name, username, password, isActive } = req.body;
+        const { id, conn_name, host, port, database_name, username, password, isActive, } = req.body;
 
         // Create query
         const query = await SybaseDatabase.create({
@@ -21,7 +22,8 @@ const saveDatabase = async (req, res) => {
             password,
             createdBy: req.user.id, // Set updatedBy to the authenticated user's ID
             createdAt: new Date(), // Set updatedAt to the current timestamp
-            isActive
+            isActive,
+            isDeleted: false
             
         });
 
@@ -72,8 +74,16 @@ const updateDatabase = async (req, res) => {
         await query.update({
             ...req.body, // Include all fields from the request
             updatedBy: req.user.id, // Set updatedBy to the authenticated user's ID
-            updatedAt: new Date() // Set updatedAt to the current timestamp
-        });
+            updatedAt: new Date(), // Set updatedAt to the current timestamp
+            isDeleted: false
+        },
+        {
+          where: { id: req.params.id },
+          returning: true, // For PostgreSQL
+          plain: true
+        }
+    );
+
 
         res.json({
             message: 'Query updated successfully',
@@ -165,22 +175,45 @@ const deleteDatabase = async (req, res) => {
     }
 };
 
-// Get all saved databases
 const loadDatabases = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search } = req.query;
+        const { page = 1, limit = 10, search, sortBy = 'id', order = 'ASC'} = req.query;
 
-        // Build the where clause for search (if provided)
-        const where = {};
+        // Base where clause - include both false and NULL values
+        const where = {
+            [Op.or]: [
+                { isDeleted: false },
+                { isDeleted: null }
+            ]
+        };
+
+        // Add search condition if provided
         if (search) {
-            where.id = { [Op.like]: `%${search}%` },
-            where.isDeleted = false;
+            where[Op.and] = [
+                { 
+                    [Op.or]: [
+                        { id: { [Op.like]: `%${search}%` } },
+                        { conn_name: { [Op.like]: `%${search}%` } },
+                        { host: { [Op.like]: `%${search}%` } }
+                    ]
+                },
+                {
+                    [Op.or]: [
+                        { isDeleted: false },
+                        { isDeleted: null }
+                    ]
+                }
+            ];
         }
 
-        // Fetch all databases with pagination
+        const orderClause = [[sortBy, order.toUpperCase()]];
+
+        // Fetch paginated databases with associations
         const databases = await SybaseDatabase.findAll({
+            where, // Include the where clause here
             limit: parseInt(limit),
             offset: (page - 1) * limit,
+            order: orderClause,
             include: [
                 {
                     model: AdminUser,
@@ -200,7 +233,7 @@ const loadDatabases = async (req, res) => {
             ]
         });
 
-        // Get the total count of databases (for pagination)
+        // Get the total count with the same filters
         const total = await SybaseDatabase.count({ where });
 
         res.json({
@@ -217,7 +250,6 @@ const loadDatabases = async (req, res) => {
         });
     }
 };
-
 
 
 // Get a specific database
