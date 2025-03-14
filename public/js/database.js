@@ -3,8 +3,7 @@ let selectedQueryId = null;
 
 // DOM Elements
 const elements = {
-    adminDashboardBtn: document.getElementById('adminDashboardBtn'),
-    mainDashboardBtn: document.getElementById('mainDashboardBtn'),
+    //adminDashboardBtn: document.getElementById('adminDashboardBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
     addQueryBtn: document.getElementById('addQueryBtn'),
     queryForm: document.getElementById('queryForm'),
@@ -22,14 +21,13 @@ const elements = {
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     loadQueries();
-    checkAuthAndRedirect();
+    //checkAuthAndRedirect();
     setupEventListeners();
 });
 
 function setupEventListeners() {
     // Navigation buttons
-    elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
-    elements.mainDashboardBtn.addEventListener('click', () => window.location.href = '/dashboard.html');
+    //elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
     elements.logoutBtn.addEventListener('click', logout);
 
     // Query management buttons
@@ -47,7 +45,8 @@ function setupEventListeners() {
     elements.executeQueryBtn.addEventListener('click', executeQuery);
 }
 
-// Check if user is authenticated
+// Check if user is authenticated and has admin role
+// Check if user is authenticated and has admin role
 async function checkAuthAndRedirect() {
     try {
         const response = await fetch('/api/auth/current-user', {
@@ -59,8 +58,9 @@ async function checkAuthAndRedirect() {
         }
 
         const data = await response.json();
-        if (!data.user) {
-            window.location.href = '/index.html';
+        if (!data.user || data.user.role !== 'admin') {
+            // Redirect non-admin users to index.html instead of admin.html
+            window.location.href = '/index.html'; // <- Changed this line
             return;
         }
 
@@ -76,16 +76,23 @@ async function checkAuthAndRedirect() {
 async function loadQueries() {
     try {
         showLoading(true);
-        const response = await fetch('/api/queries/loadQuery', {
-            credentials: 'include'
+        const response = await fetch('/api/queries/loadQueries', {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         if (!response.ok) {
             throw new Error('Failed to fetch queries');
         }
 
-        const queries = await response.json();
-        displayQueries(queries);
+        const result = await response.json();
+        if (!result.queries || !Array.isArray(result.queries)) {
+            throw new Error('Expected an array of queries, but received something else');
+        }
+
+        displayQueries(result.queries);
     } catch (error) {
         console.error('Error loading queries:', error);
         showError('Failed to load queries');
@@ -96,9 +103,13 @@ async function loadQueries() {
 
 // Display queries in the table
 function displayQueries(queries) {
+    if (!queries || !Array.isArray(queries)) {
+        //console.error('Expected an array of databases, but received:', databases);
+        showError('Invalid data format');
+        return;
+    }
     elements.queriesTableBody.innerHTML = queries.map(query => `
-        <tr>
-            <td>${query.id}</td>
+        <trdata-id="${query.id}" data-is-deleted="${query.isDeleted}">>
             <td>${query.name}</td>
             <td>${query.description || 'N/A'}</td>
             <td>${query.queryText}</td>

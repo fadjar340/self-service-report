@@ -79,47 +79,6 @@ async function checkAuthAndRedirect() {
     }
 }
 
-// Test database connection
-///async function testDatabaseConnection() {
-///    const formData = new FormData(elements.databaseForm);
-///    const connectionConfig = {
-///        conn_name: formData.get('conn_name'),
-///        host: formData.get('host'),
-///        port: parseInt(formData.get('port')),
-///        database_name: formData.get('database_name'),
-///        username: formData.get('username'),
-///        password: formData.get('password')
-///    };
-///
-///    // Validate required fields
-///    if (!connectionConfig.conn_name || !connectionConfig.host || !connectionConfig.port || 
-///        !connectionConfig.database_name || !connectionConfig.username || !connectionConfig.password) {
-///        showError('All fields are required for testing');
-///        return;
-///    }
-///
-///    try {
-///        const response = await fetch('/api/sybase/test-connection', {
-///            method: 'POST',
-///            headers: {
-///                'Content-Type': 'application/json'
-///            },
-///            body: JSON.stringify(connectionConfig)
-///        });
-///
-///        const result = await response.json();
-///        
-///        if (response.ok) {
-///            showSuccess('Connection test successful!');
-///        } else {
-///            showError(result.message || 'Connection test failed');
-///        }
-///    } catch (error) {
-///        console.error('Connection test error:', error);
-///        showError('Failed to test connection');
-///    }
-///}
-///
 
 // Fetch and display databases
 async function loadDatabases() {

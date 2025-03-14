@@ -239,8 +239,7 @@ DatabaseQuery.searchQueries = async function(options = {}) {
         limit = 10, 
         offset = 0,
         startDate,
-        endDate,
-        deleted = false
+        endDate
     } = options;
 
     const where = {};
@@ -271,7 +270,7 @@ DatabaseQuery.searchQueries = async function(options = {}) {
         where,
         limit,
         offset,
-        order: [['createdAt', 'DESC']],
+        order: [['id', 'ASC']],
         include: [
             {
                 model: sequelize.models.AdminUser,

@@ -4,8 +4,6 @@ const dbManager = require('../utils/dbManager');
 const AuditTrail = require('../models/auditTrail');
 const { authenticate, authorize } = require('./authController');
 const { authMiddleware, isAdmin } = require('../middleware/authMiddleware');
-const { Connection, Request } = require('tedious'); // Use tedious for Sybase
-//const SybaseDatabase = require('../models/sybaseDatabase');
 
 // Execute a saved query
 const executeQuery = async (req, res) => {

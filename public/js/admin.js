@@ -7,6 +7,11 @@ const elements = {
     tabContents: document.querySelectorAll('.tab-content'),
     logoutBtn: document.getElementById('logoutBtn'),
     adminDashboardBtn: document.getElementById('adminDashboardBtn'),
+    databaseManagementBtn: document.getElementById('databaseManagementBtn'),
+    userManagementBtn: document.getElementById('userManagementBtn'),
+    queryManagementBtn: document.getElementById('queryManagementBtn'),
+    healthcheckManagementBtn: document.getElementById('healthcheckManagementBtn'),
+    audittrailManagementBtn: document.getElementById('audittrailManagementBtn'),
 };
 
 // Event Listeners
@@ -16,8 +21,38 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupEventListeners() {
+
     // Navigation buttons
     //elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
+    if (elements.databaseManagementBtn) {
+        elements.databaseManagementBtn.addEventListener('click', () => {
+            window.location.assign('/database-management.html');
+        });
+    }
+
+    if (elements.userManagementBtn) {
+        elements.userManagementBtn.addEventListener('click', () => {
+            window.location.assign('/user-management.html');
+        });
+    }
+
+    if (elements.queryManagementBtn) {
+        elements.queryManagementBtn.addEventListener('click', () => {
+            window.location.assign('/database.html');
+        });
+    }
+
+    if (elements.healthcheckManagementBtn) {
+        elements.healthcheckManagementBtn.addEventListener('click', () => {
+            window.location.assign('/health-check.html');
+        });
+    }
+
+    if (elements.audittrailManagementBtn) {
+        elements.audittrailManagementBtn.addEventListener('click', () => {
+            window.location.assign('/audit-trail.html');
+        });
+    }
     elements.logoutBtn.addEventListener('click', logout);
 
     // Tab Switching
