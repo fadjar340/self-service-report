@@ -3,8 +3,6 @@ let selectedUserId = null;
 
 // DOM Elements
 const elements = {
-    //adminDashboardBtn: document.getElementById('adminDashboardBtn'),
-    mainDashboardBtn: document.getElementById('mainDashboardBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
     addUserBtn: document.getElementById('addUserBtn'),
     userForm: document.getElementById('userForm'),
@@ -28,8 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupEventListeners() {
     // Navigation buttons
-    //elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
-    //elements.mainDashboardBtn.addEventListener('click', () => window.location.href = '/dashboard.html');
     elements.logoutBtn.addEventListener('click', logout);
 
     // User management buttons
@@ -48,7 +44,11 @@ function setupEventListeners() {
 async function checkAuthAndRedirect() {
     try {
         const response = await fetch('/api/auth/current-user', {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -64,7 +64,7 @@ async function checkAuthAndRedirect() {
         // Display username
         document.getElementById('username').textContent = data.user.username;
     } catch (error) {
-        //console.error('Auth check error:', error);
+        console.error('Auth check error:', error);
         window.location.href = '/index.html';
     }
 }
@@ -72,8 +72,12 @@ async function checkAuthAndRedirect() {
 // Fetch and display users
 async function loadUsers() {
     try {
-        const response = await fetch('/api/auth/users', {
-            credentials: 'include'
+        const response = await fetch('/api/users', {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -99,12 +103,19 @@ function displayUsers(users) {
                 </span>
             </td>
             <td>${new Date(user.createdAt).toLocaleString()}</td>
+            <td>${user.isActive ? 'Yes' : 'No'}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn btn-edit" data-user-id="${user.id}" data-username="${user.username}" data-role="${user.role}">
+                    <button class="btn btn-edit" 
+                            data-id="${user.id}" 
+                            data-username="${user.username}" 
+                            data-role="${user.role}" 
+                            data-password="${user.password}"
+                            data-is-active="${user.isActive}">
                         Edit
                     </button>
-                    <button class="btn btn-delete btn-danger" data-user-id="${user.id}">
+                    <button class="btn btn-delete btn-danger" 
+                            data-id="${user.id}">
                         Delete
                     </button>
                 </div>
@@ -115,14 +126,19 @@ function displayUsers(users) {
     // Add event listeners to edit and delete buttons
     document.querySelectorAll('.btn-edit').forEach(button => {
         button.addEventListener('click', () => {
-            const { userId, username, role } = button.dataset;
-            editUser(userId, username, role);
+            const { id } = button.dataset;
+            const { username } = button.dataset;
+            const { role } = button.dataset;
+            const { password } = button.dataset;
+            const { isActive } = button.dataset;
+            editUser(id, username, role, password, isActive);
         });
     });
 
     document.querySelectorAll('.btn-delete').forEach(button => {
         button.addEventListener('click', () => {
-            showDeleteConfirmation(button.dataset.userId);
+            selectedUserId = button.dataset.id;
+            showDeleteConfirmation(selectedUserId);
         });
     });
 }
@@ -137,12 +153,13 @@ function showAddUserModal() {
 }
 
 // Show edit user modal
-function editUser(id, username, role) {
+function editUser(id, username, role, password, isActive) {
     selectedUserId = id;
     document.getElementById('modalTitle').textContent = 'Edit User';
     document.getElementById('username').value = username;
     document.getElementById('role').value = role;
     document.getElementById('password').required = false;
+    document.getElementById('isActive').checked = isActive === 'true';
     elements.userModal.style.display = 'block';
 }
 
@@ -165,12 +182,15 @@ function closeDeleteModal() {
 }
 
 // Handle form submission
+// Handle form submission
 async function handleUserSubmit(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const userData = {
         username: formData.get('username'),
-        role: formData.get('role')
+        role: formData.get('role'),
+        // Check if the isActive checkbox is present in the form data
+        isActive: formData.has('isActive') ? true : false
     };
 
     // Only include password if it's provided (for editing) or required (for new user)
@@ -180,19 +200,21 @@ async function handleUserSubmit(event) {
     }
 
     try {
-        const url = selectedUserId 
-            ? `/api/auth/users/${selectedUserId}`
-            : '/api/auth/users';
+        const url = selectedUserId
+            ? `/api/users/${selectedUserId}`
+            : '/api/users';
         
         const response = await fetch(url, {
             method: selectedUserId ? 'PUT' : 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
             },
             credentials: 'include',
             body: JSON.stringify(userData)
         });
 
+        //console.log('Response from server:', response); // Add this line for debugging
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.message || 'Failed to save user');
@@ -210,9 +232,13 @@ async function handleUserSubmit(event) {
 // Confirm and execute user deletion
 async function confirmDelete() {
     try {
-        const response = await fetch(`/api/auth/users/${selectedUserId}`, {
+        const response = await fetch(`/api/users/${selectedUserId}`, {
             method: 'DELETE',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -232,13 +258,11 @@ async function confirmDelete() {
 
 // Show success message
 function showSuccess(message) {
-    // You can implement a toast notification system here
     alert(message);
 }
 
 // Show error message
 function showError(message) {
-    // You can implement a toast notification system here
     alert('Error: ' + message);
 }
 
@@ -247,12 +271,16 @@ async function logout() {
     try {
         await fetch('/api/auth/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
     } catch (error) {
         console.error('Logout error:', error);
     } finally {
-        sessionStorage.clear();
+        // Clear the token from localStorage
+        localStorage.removeItem('token');
         window.location.href = '/index.html';
     }
 }

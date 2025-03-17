@@ -1,6 +1,6 @@
 const os = require('os');
 const { EventEmitter } = require('events');
-const dbManager = require('./dbManager');
+const dbManager = require('../utils/postgresQuery');
 
 class Monitor extends EventEmitter {
     constructor() {
@@ -33,11 +33,10 @@ class Monitor extends EventEmitter {
             }
         };
 
-        // Update system stats every 5 seconds
+        this.updateSystemStats();
         setInterval(() => this.updateSystemStats(), 5000);
     }
 
-    // Track request metrics
     trackRequest(startTime, success = true) {
         const duration = Date.now() - startTime;
         this.stats.requests.total++;
@@ -47,7 +46,6 @@ class Monitor extends EventEmitter {
             this.stats.requests.failed++;
         }
 
-        // Update average response time
         this.stats.requests.avgResponseTime = (
             (this.stats.requests.avgResponseTime * (this.stats.requests.total - 1) + duration) /
             this.stats.requests.total
@@ -56,14 +54,12 @@ class Monitor extends EventEmitter {
         this.emit('request', { duration, success });
     }
 
-    // Track query execution
     trackQuery(duration, success = true) {
         this.stats.queries.total++;
         if (!success) {
             this.stats.queries.failed++;
         }
 
-        // Update average execution time
         this.stats.queries.avgExecutionTime = (
             (this.stats.queries.avgExecutionTime * (this.stats.queries.total - 1) + duration) /
             this.stats.queries.total
@@ -72,31 +68,23 @@ class Monitor extends EventEmitter {
         this.emit('query', { duration, success });
     }
 
-    // Update system statistics
     async updateSystemStats() {
         const cpus = os.cpus();
-        const totalCPU = cpus.reduce((acc, cpu) => {
-            const total = Object.values(cpu.times).reduce((a, b) => a + b);
-            const idle = cpu.times.idle;
-            return acc + ((total - idle) / total);
-        }, 0) / cpus.length;
-
-        const totalMem = os.totalmem();
-        const freeMem = os.freemem();
+        const cpuLoad = cpus.reduce((total, cpu) => {
+            const diff = this._getDiff(cpu.times);
+            return total + diff.idle / diff.total;
+        }, 0) / cpus.length * 100;
 
         this.stats.system = {
-            cpu: (totalCPU * 100).toFixed(2),
+            cpu: cpuLoad,
             memory: {
-                total: totalMem,
-                used: totalMem - freeMem,
-                free: freeMem,
-                usagePercent: ((totalMem - freeMem) / totalMem * 100).toFixed(2)
+                total: os.totalmem(),
+                used: os.totalmem() - os.freemem(),
+                free: os.freemem()
             },
-            uptime: os.uptime(),
-            load: os.loadavg()
+            uptime: os.uptime()
         };
 
-        // Get database stats
         try {
             const dbStats = await this.getDatabaseStats();
             this.stats.database = dbStats;
@@ -107,9 +95,16 @@ class Monitor extends EventEmitter {
         this.emit('stats_updated', this.stats);
     }
 
-    // Get database statistics
+    _getDiff(times) {
+        const prev = this.prevTimes || times;
+        const idle = times.idle - prev.idle;
+        const total = Object.values(times).reduce((sum, value) => sum + value, 0) - 
+                     Object.values(prev).reduce((sum, value) => sum + value, 0);
+        this.prevTimes = times;
+        return { idle, total };
+    }
+
     async getDatabaseStats() {
-        // Check if database is initialized
         if (!dbManager.isInitialized) {
             return {
                 connections: 0,
@@ -125,9 +120,7 @@ class Monitor extends EventEmitter {
         };
     }
 
-    // Get active query count from the database
     async getActiveQueryCount() {
-        // Skip query if database is not initialized
         if (!dbManager.isInitialized) {
             return 0;
         }
@@ -145,7 +138,6 @@ class Monitor extends EventEmitter {
         }
     }
 
-    // Get current statistics
     getStats() {
         return {
             ...this.stats,
@@ -154,7 +146,6 @@ class Monitor extends EventEmitter {
         };
     }
 
-    // Reset statistics
     resetStats() {
         this.stats.requests = {
             total: 0,
@@ -171,14 +162,11 @@ class Monitor extends EventEmitter {
     }
 }
 
-// Create singleton instance
 const monitor = new Monitor();
 
-// Export middleware function for request tracking
 const monitorMiddleware = (req, res, next) => {
     const startTime = Date.now();
     
-    // Track response
     res.on('finish', () => {
         const success = res.statusCode < 400;
         monitor.trackRequest(startTime, success);

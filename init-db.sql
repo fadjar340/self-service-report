@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS admin_users (
 );
 
 -- Create sessions table
-CREATE TABLE IF NOT EXISTS sessions (
-    sid VARCHAR NOT NULL PRIMARY KEY,
-    expires TIMESTAMP WITH TIME ZONE NOT NULL,
-    data TEXT,
-    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+--CREATE TABLE IF NOT EXISTS sessions (
+--    sid VARCHAR NOT NULL PRIMARY KEY,
+--    expires TIMESTAMP WITH TIME ZONE NOT NULL,
+--    data TEXT,
+--    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+--);
 
 -- Create audit_trails table
 CREATE TABLE IF NOT EXISTS audit_trails (
@@ -36,22 +36,6 @@ CREATE TABLE IF NOT EXISTS audit_trails (
     ip_address VARCHAR(45),
     details JSONB,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create database_queries table
-CREATE TABLE IF NOT EXISTS database_queries (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    query_text TEXT NOT NULL,
-    "createdBy" INTEGER REFERENCES admin_users(id),
-    "updatedBy" INTEGER REFERENCES admin_users(id),
-    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
-    "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    "isActive" BOOLEAN NOT NULL,
-    "isDeleted" BOOLEAN DEFAULT FALSE
 );
 
 -- Create sybase_databases table
@@ -73,16 +57,36 @@ CREATE TABLE sybase_databases (
     "isDeleted" BOOLEAN DEFAULT FALSE
 );
 
+-- Create database_queries table
+CREATE TABLE IF NOT EXISTS database_queries (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    query_text TEXT NOT NULL,
+    "createdBy" INTEGER REFERENCES admin_users(id),
+    "updatedBy" INTEGER REFERENCES admin_users(id),
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
+    "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    "isActive" BOOLEAN NOT NULL,
+    "isDeleted" BOOLEAN DEFAULT FALSE,
+    "databaseId" INTEGER REFERENCES sybase_databases(id)
+);
+
 -- Constraints
-ALTER TABLE sybase_databases ADD CONSTRAINT sybase_databases_conn_name_unique UNIQUE (conn_name);
-ALTER TABLE database_queries ADD CONSTRAINT database_queries_name_unique UNIQUE (name);
+ALTER TABLE sybase_databases ADD CONSTRAINT sybase_databases_id_unique UNIQUE (id);
+ALTER TABLE database_queries ADD CONSTRAINT database_queries_id_unique UNIQUE (id);
+ALTER TABLE admin_users ADD CONSTRAINT admin_users_username_unique UNIQUE (username);
+
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_audit_trails_user_id ON audit_trails(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_trails_action ON audit_trails(action);
 CREATE INDEX IF NOT EXISTS idx_audit_trails_createdAt ON audit_trails("createdAt");
 CREATE INDEX IF NOT EXISTS idx_database_queries_createdBy ON database_queries("createdBy");
-CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires);
+--CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires);
+CREATE INDEX IF NOT EXISTS idx_database_queries_database_id ON database_queries("databaseId");
 
 -- Create default admin user (password: admin123)
 -- Using pgcrypto to hash password with bcrypt
@@ -95,7 +99,7 @@ VALUES (
     FALSE
 ) ON CONFLICT (username) DO NOTHING;
 
--- Sample Sybes_database data
+-- Sample Sybase_database data
 INSERT INTO sybase_databases (conn_name, host, port, database_name, username, password, "isActive", "isDeleted")
 VALUES (
     'Sybase Database',
@@ -106,17 +110,18 @@ VALUES (
     'password',
     TRUE,
     FALSE
-) ON CONFLICT (conn_name) DO NOTHING;
+) ON CONFLICT (id) DO NOTHING;
 
 -- Sample database_queries data
-INSERT INTO database_queries (name, description, query_text, "isActive", "isDeleted"  )
+INSERT INTO database_queries (name, description, query_text, "isActive", "isDeleted", "databaseId" )
 VALUES (
     'Sample Query',
     'This is a sample query',
     'SELECT * FROM sample_table',
     FALSE,
-    FALSE
-) ON CONFLICT (name) DO NOTHING;
+    FALSE,
+    1
+) ON CONFLICT (id) DO NOTHING;
 
 ----
 -- Add triggers for updatedat
@@ -151,7 +156,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
-
 
 -- admin users triggers
 CREATE TRIGGER update_admin_users_createdAt

@@ -1,7 +1,6 @@
 const { validationResult } = require('express-validator');
 const { query } = require('express-validator');
 
-// Handle validation errors
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -17,7 +16,6 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// Validate audit logs query parameters
 const validateAuditLogsQuery = [
     query('page')
         .optional()
@@ -52,7 +50,6 @@ const validateAuditLogsQuery = [
         .toInt()
 ];
 
-// Validate query parameters for pagination
 const validatePagination = [
     query('page')
         .optional()
@@ -66,7 +63,6 @@ const validatePagination = [
         .toInt()
 ];
 
-// Validate date range parameters
 const validateDateRange = [
     query('startDate')
         .optional()
@@ -80,7 +76,6 @@ const validateDateRange = [
         .toDate()
 ];
 
-// Custom validation: check if end date is after start date
 const validateDateOrder = (req, res, next) => {
     const { startDate, endDate } = req.query;
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
@@ -92,7 +87,6 @@ const validateDateOrder = (req, res, next) => {
     next();
 };
 
-// Custom validation: check if limit is within allowed range
 const validateLimit = (min, max) => {
     return (req, res, next) => {
         const limit = parseInt(req.query.limit);
@@ -106,21 +100,17 @@ const validateLimit = (min, max) => {
     };
 };
 
-// Sanitize query parameters
 const sanitizeQueryParams = (req, res, next) => {
-    // Convert string 'true'/'false' to boolean
     if (req.query.includeDeleted) {
         req.query.includeDeleted = req.query.includeDeleted === 'true';
     }
 
-    // Convert string numbers to integers
     ['page', 'limit', 'userId'].forEach(param => {
         if (req.query[param]) {
             req.query[param] = parseInt(req.query[param]);
         }
     });
 
-    // Set default values
     req.query.page = req.query.page || 1;
     req.query.limit = req.query.limit || 50;
 

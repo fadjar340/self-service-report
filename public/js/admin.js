@@ -1,5 +1,5 @@
 // Global variables
-let selectedUserName = null;
+let selectedUserId = null;
 
 // DOM Elements
 const elements = {
@@ -68,7 +68,11 @@ function setupEventListeners() {
 async function checkAuthAndRedirect() {
     try {
         const response = await fetch('/api/auth/current-user', {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -101,17 +105,20 @@ function switchTab(tabName) {
 
 // Logout function
 async function logout() {
-    console.log('Logout function called'); // Debugging line
     try {
-        const response = await fetch('/api/auth/logout', {
+        await fetch('/api/auth/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
-        console.log('Logout response:', response); // Debugging line
     } catch (error) {
         console.error('Logout error:', error);
     } finally {
-        sessionStorage.clear();
+        // Clear the token from localStorage
+        localStorage.removeItem('token');
         window.location.href = '/index.html';
     }
 }

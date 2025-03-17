@@ -1,25 +1,19 @@
 const { Model, DataTypes, Op } = require('sequelize');
 const sequelize = require('../config/db');
-const AuditTrail = require('./auditTrail');
-const logger = require('../utils/logger'); // Assuming you have a logger utility
 
 class DatabaseQuery extends Model {
-    // Helper method to get safe query info
     toSafeObject() {
-        const {name, description, queryText,updatedAt,updatedBy,createdAt,createdBy,deletedAt, deletedBy, isActive } = this;
-        return { name, description, queryText, updatedAt,updatedBy,createdAt,createdBy,deletedAt, deletedBy, isActive };
+        const { name, description, queryText, updatedAt, updatedBy, createdAt, createdBy, deletedAt, deletedBy, isActive, isDeleted, databaseId } = this;
+        return { name, description, queryText, updatedAt, updatedBy, createdAt, createdBy, deletedAt, deletedBy, isActive, isDeleted, databaseId };
     }
 
-    // Static method to validate query
     static validateQuery(queryText) {
         const upperQuery = queryText.trim().toUpperCase();
-        
-        // Check if query starts with SELECT or WITH
+
         if (!upperQuery.startsWith('SELECT') && !upperQuery.startsWith('WITH')) {
             throw new Error('Query must start with SELECT or WITH');
         }
 
-        // Check for dangerous keywords
         const dangerousKeywords = [
             'DELETE',
             'DROP',
@@ -71,7 +65,6 @@ DatabaseQuery.init({
     queryText: {
         type: DataTypes.TEXT,
         allowNull: false,
-        field: 'query_text',
         validate: {
             notNull: {
                 msg: 'Query text is required'
@@ -87,47 +80,50 @@ DatabaseQuery.init({
     createdBy: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        field: 'createdBy',
         references: {
             model: 'admin_users',
             key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT'
+        onDelete: 'RESTRICT',
+        field: 'createdBy'
     },
     updatedBy: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        field: 'updatedBy',
         references: {
             model: 'admin_users',
             key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT'
+        onDelete: 'RESTRICT',
+        field: 'updatedBy'
     },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW,
         field: 'createdAt'
-    },  
+    },
     updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW,
         field: 'updatedAt'
     },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        field: 'isActive'
-    },
     isDeleted: {
         type: DataTypes.BOOLEAN,
         allowNull: true,
         defaultValue: false,
         field: 'isDeleted'
+    },
+    databaseId: {
+        type: DataTypes.INTEGER,
+        references: {
+            model: 'sybase_databases',
+            key: 'id'
+        },
+        field: 'databaseId'
     }
 }, {
     sequelize,
@@ -136,11 +132,10 @@ DatabaseQuery.init({
     timestamps: true,
     underscored: true,
     hooks: {
-        // Log query creation
         afterCreate: async (query, options) => {
             try {
                 const session = options.session || {};
-                await AuditTrail.logAction({
+                await sequelize.models.AuditTrail.create({
                     userId: session.user?.id,
                     action: 'CREATE_QUERY',
                     resource: 'DATABASE_QUERY',
@@ -153,14 +148,13 @@ DatabaseQuery.init({
                     }
                 });
             } catch (error) {
-                logger.error('Error logging audit trail for query creation:', error);
+                console.error('Error logging audit trail for query creation:', error);
             }
         },
-        // Log query update
         afterUpdate: async (query, options) => {
             try {
                 const session = options.session || {};
-                await AuditTrail.logAction({
+                await sequelize.models.AuditTrail.create({
                     userId: session.user?.id,
                     action: 'UPDATE_QUERY',
                     resource: 'DATABASE_QUERY',
@@ -174,14 +168,13 @@ DatabaseQuery.init({
                     }
                 });
             } catch (error) {
-                logger.error('Error logging audit trail for query update:', error);
+                console.error('Error logging audit trail for query update:', error);
             }
         },
-        // Log query deletion
         beforeDestroy: async (query, options) => {
             try {
                 const session = options.session || {};
-                await AuditTrail.logAction({
+                await sequelize.models.AuditTrail.create({
                     userId: session.user?.id,
                     action: 'DELETE_QUERY',
                     resource: 'DATABASE_QUERY',
@@ -194,13 +187,12 @@ DatabaseQuery.init({
                     }
                 });
             } catch (error) {
-                logger.error('Error logging audit trail for query deletion:', error);
+                console.error('Error logging audit trail for query deletion:', error);
             }
         }
     }
 });
 
-// Define associations
 DatabaseQuery.associate = (models) => {
     DatabaseQuery.belongsTo(models.AdminUser, {
         as: 'creator',
@@ -210,10 +202,13 @@ DatabaseQuery.associate = (models) => {
         as: 'updater',
         foreignKey: 'updatedBy'
     });
+    DatabaseQuery.belongsTo(models.SybaseDatabase, {
+        foreignKey: 'databaseId',
+        as: 'sybaseDatabase'
+    });
 };
 
-// Static method to find query by name
-DatabaseQuery.findOneById = async function(id) {
+DatabaseQuery.findOneById = async function (id) {
     return this.findOne({
         where: { id },
         include: [
@@ -231,8 +226,7 @@ DatabaseQuery.findOneById = async function(id) {
     });
 };
 
-// Static method to search queries
-DatabaseQuery.searchQueries = async function(options = {}) {
+DatabaseQuery.searchQueries = async function (options = {}) {
     const { 
         search = '', 
         userId = null, 
@@ -244,7 +238,6 @@ DatabaseQuery.searchQueries = async function(options = {}) {
 
     const where = {};
 
-    // Add search condition
     if (search) {
         where[Op.or] = [
             { name: { [Op.iLike]: `%${search}%` } },
@@ -254,12 +247,10 @@ DatabaseQuery.searchQueries = async function(options = {}) {
         ];
     }
 
-    // Add user filter
     if (userId) {
         where.createdBy = userId;   
     }
 
-    // Add date range filter
     if (startDate || endDate) {
         where.createdAt = {};
         if (startDate) where.createdAt[Op.gte] = startDate;
@@ -286,4 +277,4 @@ DatabaseQuery.searchQueries = async function(options = {}) {
     });
 };
 
-module.exports = DatabaseQuery
+module.exports = DatabaseQuery;

@@ -15,7 +15,7 @@ services:
       - DB_NAME=self_service
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - SESSION_SECRET=your-secret-key-here
+      - JWT_SECRET=af271205b488faa3b917f74706bf900bb74cc8131988daa43feec1b3fd567cacc65f164626fe88fd319b4d4fb29c61fc0f1436dc94b1a0b6173ab3f033b31ae7
 
     volumes:
       - .:/usr/src/app

@@ -7,7 +7,7 @@ router.post('/sybase/test-connection', async (req, res) => {
     const config = req.body;
     
     // Validate input
-    if (!config.host || !config.port || !config.username || !config.password || !config.database_name) {
+    if (!config.host || !config.port || !config.username || !config.password) {
         return res.status(400).json({ message: 'Missing required connection parameters' });
     }
 
@@ -23,7 +23,7 @@ router.post('/sybase/test-connection', async (req, res) => {
         },
         options: {
             port: parseInt(config.port),
-            database: config.database_name,
+            database: config.database_name || '', // Handle case where database_name is not provided
             encrypt: false, // Typically false for on-premise databases
             rowCollectionOnDone: true,
             // FreeTDS specific configuration
@@ -76,7 +76,7 @@ router.post('/sybase/test-connection', async (req, res) => {
         console.error('Connection test failed:', error);
         res.status(500).json({
             success: false,
-            message: this.sanitizeError(error.message)
+            message: sanitizeError(error.message)
         });
     }
 });

@@ -6,17 +6,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Function to check authentication status
 async function checkAuth() {
     try {
+        const token = localStorage.getItem('token');
+        //console.log('Token from localStorage:', token); // Add this line to log the token
+
         const response = await fetch('/api/auth/current-user', {
             method: 'GET',
             credentials: 'include',
             headers: {
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
 
         if (!response.ok) {
             if (response.status === 401) {
-                // Not logged in, redirect to login page if not already there
                 if (!window.location.pathname.includes('index.html')) {
                     window.location.href = '/index.html';
                 }
@@ -26,10 +29,9 @@ async function checkAuth() {
         }
 
         const data = await response.json();
+        //console.log('Current user data:', data); // Add this line to log the user data
 
-        // User is authenticated
         if (data.user) {
-            // Redirect to appropriate page based on role if on login page
             if (window.location.pathname.includes('index.html')) {
                 if (data.user.role === 'admin') {
                     window.location.href = '/admin.html';
@@ -38,23 +40,18 @@ async function checkAuth() {
                 }
             }
 
-            // Redirect to appropriate page if accessing admin.html directly
             if (window.location.pathname.includes('admin.html') && data.user.role !== 'admin') {
                 window.location.href = '/user.html';
             }
 
-            // Update UI with user info
             updateUserInfo(data.user);
         }
     } catch (error) {
-        //console.error('Auth check error:', error);
-        // Handle error but don't redirect if already on login page
         if (!window.location.pathname.includes('index.html')) {
             window.location.href = '/index.html';
         }
     }
 }
-
 
 // Function to handle login
 async function login(event) {
@@ -80,6 +77,9 @@ async function login(event) {
         if (!response.ok) {
             throw new Error(data.message || 'Login failed');
         }
+        //console.log('Login successful:', data); // Add this line to log the response
+        // Store the token in localStorage
+        localStorage.setItem('token', data.token);
 
         // Clear any existing error message
         errorDiv.textContent = '';
@@ -92,24 +92,26 @@ async function login(event) {
             window.location.href = '/user.html';
         }
     } catch (error) {
-        //console.error('Login error:', error);
         errorDiv.textContent = error.message || 'Login failed. Please try again.';
         errorDiv.style.display = 'block';
     }
 }
 
 // Function to handle logout
-// Logout function
 async function logout() {
     try {
         await fetch('/api/auth/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
     } catch (error) {
         console.error('Logout error:', error);
     } finally {
-        sessionStorage.clear();
+        // Clear the token from localStorage
+        localStorage.removeItem('token');
         window.location.href = '/index.html';
     }
 }
@@ -126,7 +128,6 @@ function updateUserInfo(user) {
         element.textContent = `Role: ${user.role}`;
     }
 
-    // Show/hide elements based on user role
     const adminElements = document.getElementsByClassName('admin-only');
     for (const element of adminElements) {
         element.style.display = user.role === 'admin' ? 'block' : 'none';

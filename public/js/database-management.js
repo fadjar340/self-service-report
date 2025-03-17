@@ -8,18 +8,14 @@ const elements = {
     databaseForm: document.getElementById('databaseForm'),
     closeModalBtn: document.getElementById('closeModalBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
-    updateModal: document.getElementById('updateModal'),
-    closeUpdateModalBtn: document.getElementById('closeUpdateModalBtn'),
-    cancelUpdateBtn: document.getElementById('cancelUpdateBtn'),
-    confirmUpdateBtn: document.getElementById('confirmUpdateBtn'),
     closeDeleteModalBtn: document.getElementById('closeDeleteModalBtn'),
     confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
     cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
     deleteModal: document.getElementById('deleteModal'),
     databaseModal: document.getElementById('databaseModal'),
-    updateForm: document.getElementById('updateForm'),
+    editDatabaseBtn: document.getElementById('editDatabaseBtn'),
     databasesTableBody: document.getElementById('databasesTableBody'),
-    //testDatabaseConnectionBtn: document.getElementById('testDatabaseConnectionBtn')
+    testDatabaseConnectionBtn: document.getElementById('testDatabaseConnectionBtn')
 };
 
 // Event Listeners
@@ -41,24 +37,24 @@ function setupEventListeners() {
     elements.closeModalBtn.addEventListener('click', closeModal);
     elements.cancelBtn.addEventListener('click', closeModal);
 
-    // Update confirmation modal buttons
-    elements.cancelUpdateBtn.addEventListener('click', cancelUpdateModal);
-    elements.updateForm.addEventListener('submit', handleDatabaseSubmit);
-
     // Delete confirmation modal buttons
     elements.closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
     elements.cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     elements.confirmDeleteBtn.addEventListener('click', confirmDelete);
 
     // Test Connection button
-    //elements.testDatabaseConnectionBtn.addEventListener('click', testDatabaseConnection);
+    elements.testDatabaseConnectionBtn.addEventListener('click', testDatabaseConnection);
 }
 
 // Check if user is authenticated and has admin role
 async function checkAuthAndRedirect() {
     try {
         const response = await fetch('/api/auth/current-user', {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -79,14 +75,14 @@ async function checkAuthAndRedirect() {
     }
 }
 
-
 // Fetch and display databases
 async function loadDatabases() {
     try {
-        const response = await fetch('/api/sybase/loadDatabases', {
+        const response = await fetch('/api/postgres/databases', {
             credentials: 'include',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
 
@@ -101,21 +97,15 @@ async function loadDatabases() {
 
         displayDatabases(result.databases);
     } catch (error) {
-        //console.error('Error loading databases:', error);
+        console.error('Error loading databases:', error);
         showError('Failed to load databases');
     }
 }
 
 // Display databases in the table
 function displayDatabases(databases) {
-    if (!databases || !Array.isArray(databases)) {
-        //console.error('Expected an array of databases, but received:', databases);
-        showError('Invalid data format');
-        return;
-    }
-
     elements.databasesTableBody.innerHTML = databases.map(database => `
-        <tr data-id="${database.id}" data-is-deleted="${database.isDeleted}">
+        <tr data-id="${database.id}"> 
             <td>${database.conn_name}</td>
             <td>${database.host}</td>
             <td>${database.port}</td>
@@ -125,11 +115,11 @@ function displayDatabases(databases) {
             <td>
                 <div class="action-buttons">
                     <!-- Test Connection Button -->
-                    <button class="btn btn-secondary" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}">
+                    <button class="btn btn-secondary test-connection" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}">
                         Test Connection
                     </button>
                     <!-- Update Button -->
-                    <button class="btn btn-secondary update-database-btn" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}" data-is-active="${database.isActive}" data-is-deleted="${database.isDeleted}">
+                    <button class="btn btn-secondary btn-edit" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}" data-is-active="${database.isActive}">
                         Edit
                     </button>
                     <!-- Delete Button -->
@@ -142,11 +132,18 @@ function displayDatabases(databases) {
     `).join('');
 
     // Add event listeners to update buttons
-    document.querySelectorAll('.update-database-btn').forEach(button => {
+    document.querySelectorAll('.btn-edit').forEach(button => {
         button.addEventListener('click', () => {
-            selectedDatabaseId = button.dataset.id;
-            //console.log('Selected ID:', selectedDatabaseId);
-            showUpdateDatabaseModal(selectedDatabaseId);
+            const id = button.dataset.id;
+            const conn_name = button.dataset.connName;
+            const host = button.dataset.host;
+            const port = button.dataset.port;
+            const database_name = button.dataset.databaseName;
+            const username = button.dataset.username;
+            const isActive = button.dataset.isActive;
+
+            // Call the function to show the update modal with the selected database's data
+            editDatabase(id, conn_name, host, port, database_name, username, isActive);
         });
     });
 
@@ -154,8 +151,23 @@ function displayDatabases(databases) {
     document.querySelectorAll('.delete-database-btn').forEach(button => {
         button.addEventListener('click', () => {
             selectedDatabaseId = button.dataset.id;
-            //console.log('Deleting database with ID:', id);
             showDeleteConfirmation(selectedDatabaseId);
+        });
+    });
+
+    // Add event listeners to test connection buttons
+    document.querySelectorAll('.test-connection').forEach(button => {
+        button.addEventListener('click', () => {
+            const buttonData = {
+                id: button.dataset.id,
+                connName: button.dataset.connName,
+                host: button.dataset.host,
+                port: button.dataset.port,
+                databaseName: button.dataset.databaseName,
+                username: button.dataset.username,
+                password: button.dataset.password
+            };
+            testDatabaseConnection(buttonData);
         });
     });
 }
@@ -168,49 +180,26 @@ function showAddDatabaseModal() {
     elements.databaseModal.style.display = 'block';
 }
 
-
-// Show update database modal
-function showUpdateDatabaseModal(id) {
-
-
-    // Find the row using data-id
-    const row = document.querySelector(`tr[data-id="${id}"]`);
-    if (!row) {
-        //console.error('Database row not found for ID:', id);
-        return;
-    }
-
-    // Get data from button dataset instead of table cells
-    const button = row.querySelector('.update-database-btn');
+// Show edit database modal
+function editDatabase(id, conn_name, host, port, database_name, username, isActive) {
     selectedDatabaseId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Database';
+    
+    elements.databaseForm.elements.conn_name.value = conn_name;
+    elements.databaseForm.elements.host.value = host;
+    elements.databaseForm.elements.port.value = port;
+    elements.databaseForm.elements.database_name.value = database_name;
+    elements.databaseForm.elements.username.value = username;
+    elements.databaseForm.elements.password.value = ''; // Clear password field
+    elements.databaseForm.elements.isActive.checked = isActive === 'true';
 
-    // Populate form fields
-    elements.updateForm.elements.conn_name.value = button.dataset.connName;
-    elements.updateForm.elements.host.value = button.dataset.host;
-    elements.updateForm.elements.port.value = button.dataset.port;
-    elements.updateForm.elements.database_name.value = button.dataset.databaseName;
-    elements.updateForm.elements.username.value = button.dataset.username;
-    elements.updateForm.elements.password.value = ''; // Clear password field
-    elements.updateForm.elements.isActive.checked = button.dataset.isActive === 'true';
-
-    elements.updateModal.style.display = 'block';
+    elements.databaseModal.style.display = 'block';
 }
-
-
-
 
 // Close modal
 function closeModal() {
     elements.databaseModal.style.display = 'none';
-    elements.updateModal.style.display = 'none';
-    //elements.databaseForm.reset();
-    selectedDatabaseId = null;
-}
-
-// Cancel update confirmation modal
-function cancelUpdateModal() {
-    elements.databaseModal.style.display = 'none';
-    elements.updateModal.style.display = 'none';
+    elements.databaseForm.reset();
     selectedDatabaseId = null;
 }
 
@@ -226,73 +215,35 @@ function closeDeleteModal() {
     selectedDatabaseId = null;
 }
 
-// Cancel delete confirmation modal
-function cancelDeleteModal() {
-    elements.deleteModal.style.display = 'none';
-    selectedDatabaseId = null;
-}
-
 // Handle form submission for add/update database
 async function handleDatabaseSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
-    const isUpdate = !!selectedDatabaseId;
-  
-    // add new 14 March 09:48
-    const formValues = Object.fromEntries(formData.entries());
-
+    
     const databaseData = {
-        ...formValues,
-        isActive: formValues.isActive === "true", // Convert to boolean
-        port: parseInt(formValues.port) || null   // Convert port to number
-      };
-  
-    // Only add password if it's provided
-    const password = formData.get('password');
-    if (password) {
-        databaseData.password = password;
-    }
-
+        conn_name: formData.get('conn_name'),
+        host: formData.get('host'),
+        port: parseInt(formData.get('port')) || null,
+        database_name: formData.get('database_name'),
+        username: formData.get('username'),
+        isActive: formData.get('isActive') === 'on',
+        password: formData.get('password') || null
+    };
+    
     try {
-        const url = isUpdate 
-            ? `/api/sybase/updateDatabase/${selectedDatabaseId}`
-            : '/api/sybase/saveDatabase';
-
-        const method = isUpdate ? 'PUT' : 'POST';
-
-        // For updates, filter out unchanged fields
-        let requestData = databaseData;
-        if (isUpdate) {
-            requestData = {};
-            
-            // Only include fields that have values
-            for (const [key, value] of Object.entries(databaseData)) {
-                if (value !== null && value !== undefined && value !== '' && !(typeof value === 'boolean')){
-                    requestData[key] = value;
-                }
-            }
-            
-              // Explicitly include isActive even if false
-             if (databaseData.isActive !== undefined) {
-               requestData.isActive = databaseData.isActive;
-             }
-
-            // Add password separately if provided
-            if (password) {
-                requestData.password = password;
-            }
-
-            if (Object.keys(requestData).length === 0) {
-                throw new Error('No changes detected');
-            }
-        }
+        const url = selectedDatabaseId 
+            ? `/api/postgres/databases/${selectedDatabaseId}`
+            : '/api/postgres/databases';
 
         const response = await fetch(url, {
-            method,
-            headers: {'Content-Type': 'application/json'},
+            method: selectedDatabaseId ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
             credentials: 'include',
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(databaseData)
         });
 
         if (!response.ok) {
@@ -301,9 +252,8 @@ async function handleDatabaseSubmit(event) {
         }
 
         closeModal();
-        selectedDatabaseId = null; 
         loadDatabases();
-        showSuccess(isUpdate ? 'Database updated successfully' : 'Database created successfully');
+        showSuccess(selectedDatabaseId ? 'Database updated successfully' : 'Database created successfully');
     } catch (error) {
         console.error('Error saving database:', error);
         showError(error.message);
@@ -313,9 +263,13 @@ async function handleDatabaseSubmit(event) {
 // Confirm and execute database deletion
 async function confirmDelete() {
     try {
-        const response = await fetch(`/api/sybase/deleteDatabase/${selectedDatabaseId}`, {
+        const response = await fetch(`/api/postgres/databases/${selectedDatabaseId}`, {
             method: 'DELETE',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -324,13 +278,53 @@ async function confirmDelete() {
         }
 
         closeDeleteModal();
-        selectedDatabaseId = null; 
         loadDatabases();
         showSuccess('Database deleted successfully');
     } catch (error) {
         console.error('Error deleting database:', error);
         showError(error.message);
         closeDeleteModal();
+    }
+}
+
+// Test database connection
+async function testDatabaseConnection(buttonData) {
+    console.log('Button data:', buttonData); // Add this line to debug
+
+    try {
+        const response = await fetch('/api/sybase/test-connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
+            body: JSON.stringify({
+                conn_name: buttonData.connName,
+                host: buttonData.host,
+                port: buttonData.port,
+                database_name: buttonData.databaseName || '', // Ensure database_name is included, even if empty
+                username: buttonData.username,
+                password: buttonData.password
+            })
+        });
+
+        console.log('Request body:', {
+            conn_name: buttonData.connName,
+            host: buttonData.host,
+            port: buttonData.port,
+            database_name: buttonData.databaseName || '',
+            username: buttonData.username,
+            password: buttonData.password
+        }); // Add this line to debug
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        alert('Connection successful!');
+    } catch (error) {
+        console.error('Error testing connection:', error);
+        alert(`Connection failed: ${error.message}`);
     }
 }
 
@@ -349,11 +343,16 @@ async function logout() {
     try {
         await fetch('/api/auth/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
     } catch (error) {
-        //console.error('Logout error:', error);
+        console.error('Logout error:', error);
     } finally {
+        // Clear the token from localStorage
+        localStorage.removeItem('token');
         window.location.href = '/index.html';
     }
 }

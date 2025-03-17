@@ -1,10 +1,7 @@
 const { Model, DataTypes, QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
-//const SybaseDatabase = require('./sybaseDatabase');
-
 
 class AdminUser extends Model {
-    // Helper method to check password using pgcrypto
     async validatePassword(password) {
         try {
             const result = await sequelize.query(
@@ -21,41 +18,26 @@ class AdminUser extends Model {
         }
     }
 
-    // Helper method to get safe user data (without password)
     toSafeObject() {
-        const { id, username, role, createdAt, updatedAt, updatedBy, createdBy } = this;
-        return { id, username, role, createdAt, updatedAt, updatedBy, createdBy};
+        const { id, username, role, createdAt, updatedAt, updatedBy, createdBy, isActive } = this;
+        return { id, username, role, createdAt, updatedAt, updatedBy, createdBy, isActive };
     }
 
-    // Helper method to generate session data
-    generateSession() {
-        return {
-            id: this.id,
-            username: this.username,
-            role: this.role
-        };
-    }
-
-    // Static method to find user by credentials
-    static async findByCredentials(username, password) {
-        try {
-            // First find the user
-            const user = await this.findOne({ where: { username } });
+    static findByCredentials(username, password) {
+        return this.findOne({ where: { username } }).then(user => {
             if (!user) {
-                throw new Error('Invalid login credentials');
+                return Promise.reject(new Error('Invalid login credentials'));
             }
 
-            // Verify password using pgcrypto
-            const isValid = await user.validatePassword(password);
-            if (!isValid) {
-                throw new Error('Invalid login credentials');
-            }
-
-            return user;
-        } catch (error) {
-            throw new Error('Invalid login credentials');
-        }
+            return user.validatePassword(password).then(isValid => {
+                if (!isValid) {
+                    return Promise.reject(new Error('Invalid login credentials'));
+                }
+                return user;
+            });
+        });
     }
+
 }
 
 AdminUser.init({
@@ -65,49 +47,30 @@ AdminUser.init({
         autoIncrement: true
     },
     username: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(255),
         allowNull: false,
-        unique: {
-            msg: 'Username already exists'
-        },
+        unique: true,
         validate: {
-            notNull: {
-                msg: 'Username is required'
-            },
-            notEmpty: {
-                msg: 'Username cannot be empty'
-            },
-            len: {
-                args: [3, 255],
-                msg: 'Username must be between 3 and 255 characters'
-            }
+            notNull: true,
+            notEmpty: true,
+            len: [3, 255]
         }
     },
     password: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(255),
         allowNull: false,
         validate: {
-            notNull: {
-                msg: 'Password is required'
-            },
-            notEmpty: {
-                msg: 'Password cannot be empty'
-            },
-            len: {
-                args: [6, 255],
-                msg: 'Password must be at least 6 characters long'
-            }
+            notNull: true,
+            notEmpty: true,
+            len: [6, 255]
         }
     },
     role: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: false,
         defaultValue: 'user',
         validate: {
-            isIn: {
-                args: [['admin', 'user']],
-                msg: 'Role must be either admin or user'
-            }
+            isIn: [['admin', 'user']]
         }
     },
     createdAt: {
@@ -139,15 +102,41 @@ AdminUser.init({
             model: 'admin_users',
             key: 'id'
         }
+    },
+    deletedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'deletedBy',
+        references: {
+            model: 'admin_users',
+            key: 'id'
+        }
+    },
+    deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'deletedAt'
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        field: 'isActive'
+    },
+    isDeleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: 'isDeleted'
     }
 }, {
     sequelize,
     modelName: 'AdminUser',
     tableName: 'admin_users',
     timestamps: true,
+    paranoid: true,
     underscored: true,
     hooks: {
-        // Hash password before saving using pgcrypto
         beforeSave: async (user) => {
             if (user.changed('password')) {
                 const [result] = await sequelize.query(
@@ -163,7 +152,8 @@ AdminUser.init({
     }
 });
 
-// Define reverse associations
+
+
 AdminUser.associate = (models) => {
     AdminUser.hasMany(models.SybaseDatabase, { as: 'createdDatabases', foreignKey: 'createdBy' });
     AdminUser.hasMany(models.SybaseDatabase, { as: 'updatedDatabases', foreignKey: 'updatedBy' });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Management</title>
+    <title>User Management</title>
     <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Font Awesome for icons -->
 </head>
@@ -77,13 +77,14 @@
             </button>
         </div>
 
-            <div class="users-table-container">
-                <table class="table-responsive">
+            <div class="table-container">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Username</th>
                             <th>Role</th>
                             <th>Created At</th>
+                            <th>Active</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -109,11 +110,11 @@
                 <form id="userForm">
                     <div class="form-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" name="username" required minlength="3">
+                        <input type="text" id="username" name="username" required>
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" minlength="6">
+                        <input type="password" id="password" name="password">
                         <span class="password-hint">Leave empty to keep current password when editing</span>
                     </div>
                     <div class="form-group">
@@ -122,6 +123,10 @@
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                         </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label for="isActive">Active</label>
+                        <input type="checkbox" id="isActive" name="isActive" checked>
                     </div>
                     <div class="form-actions">
                         <button type="button" id="cancelModalBtn" class="btn btn-secondary">
@@ -154,7 +159,7 @@
                 </div>
             </div>
         </div>
-
+    </div> 
     <!-- Loading Spinner -->
     <div id="loader" class="hidden">
         <div class="spinner"></div>

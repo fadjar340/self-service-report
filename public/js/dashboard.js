@@ -1,3 +1,6 @@
+// Global variables
+let selectedQueryId = null;
+
 // DOM Elements
 const newQueryBtn = document.getElementById('new-query-btn');
 const savedQueriesBtn = document.getElementById('saved-queries-btn');
@@ -15,7 +18,37 @@ const errorMessage = document.getElementById('error-message');
 document.addEventListener('DOMContentLoaded', async () => {
     await loadDatabases();
     await loadSavedQueries();
+    await checkAuthAndRedirect();
 });
+
+// Check if user is authenticated and has admin role
+async function checkAuthAndRedirect() {
+    try {
+        const response = await fetch('/api/auth/current-user', {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Authentication failed');
+        }
+
+        const data = await response.json();
+        if (!data.user || data.user.role !== 'admin') {
+            window.location.href = '/admin.html';
+            return;
+        }
+
+        // Display username
+        document.getElementById('username').textContent = data.user.username;
+    } catch (error) {
+        console.error('Auth check error:', error);
+        window.location.href = '/index.html';
+    }
+}
 
 newQueryBtn.addEventListener('click', () => {
     queryForm.style.display = 'block';
@@ -39,44 +72,16 @@ executeQueryForm.addEventListener('submit', async (e) => {
     await executeQuery();
 });
 
-// Load databases
-async function loadDatabases() {
-    try {
-        const response = await fetch('/api/sybase/loadDatabases', {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to load databases');
-        }
-
-        const data = await response.json();
-        databaseSelect.innerHTML = '<option value="">Choose a database...</option>';
-        
-        data.databases.forEach(db => {
-            const option = document.createElement('option');
-            option.value = db.id;
-            option.textContent = db.name;
-            databaseSelect.appendChild(option);
-        });
-    } catch (error) {
-        showError('Failed to load databases: ' + error.message);
-    }
-}
-
 // Load saved queries
 async function loadSavedQueries() {
     try {
-        const response = await fetch('/api/queries', {
+        const response = await fetch('/api/postgres/queries', {
             method: 'GET',
             credentials: 'include',
             headers: {
-                'Accept': 'application/json'
-            }
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -87,42 +92,78 @@ async function loadSavedQueries() {
         const container = document.querySelector('.queries-container');
         container.innerHTML = '';
 
-        if (data.queries.length === 0) {
-            container.innerHTML = '<p>No saved queries found.</p>';
-            return;
+        const result = await response.json();
+        if (!result.queries || !Array.isArray(result.queries)) {
+            throw new Error('Expected an array of Query, but received something else');
         }
 
-        data.queries.forEach(query => {
-            const queryElement = createQueryElement(query);
-            container.appendChild(queryElement);
-        });
+        displayDatabases(result.queries);
     } catch (error) {
         showError('Failed to load saved queries: ' + error.message);
     }
 }
 
-// Create query element
-function createQueryElement(query) {
-    const div = document.createElement('div');
-    div.className = 'saved-query';
-    div.innerHTML = `
-        <h4>${query.name}</h4>
-        <p>${query.description || 'No description'}</p>
-        <div class="query-actions">
-            <button onclick="executeQuery(${query.id})" class="btn btn-primary">Execute</button>
-            <button onclick="editQuery(${query.id})" class="btn">Edit</button>
-            <button onclick="deleteQuery(${query.id})" class="btn btn-danger">Delete</button>
-        </div>
-    `;
-    return div;
+// Display query results
+function displayQueries(queries) {
+    if (!queries || !Array.isArray(qeriew)) {
+        //console.error('Expected an array of databases, but received:', queries);
+        showError('Invalid data format');
+        return;
+    }
+
+    elements.queriesTableBody.innerHTML = queries.map(query => `
+        <tr data-id="${query.id}" data-is-deleted="${query.isDeleted}">
+            <td>${query.name}</td>
+            <td>${query.decription}</td>
+            <td>${query.queryText}</td>
+            <td>${query.isActive ? 'Yes' : 'No'}</td>
+            <td>
+                <div class="action-buttons">
+                    <!-- Test Connection Button -->
+                    <button class="btn btn-secondary" data-id="${query.id}" data-conn-name="${query.name}" data-description="${query.description}" data-query-text="${query.queryText}"</button>
+                        Test Connection
+                    </button>
+                    <!-- Update Button -->
+                    <button class="btn btn-secondary update-database-btn" data-id="${query.id}" data-conn-name="${query.name}" data-description="${query.description}" data-query-text="${query.queryText}" data-is-active="${query.isActive} data-is-deleted="${query.isDeleted}">
+                        Edit
+                    </button>
+                    <!-- Delete Button -->
+                    <button class="btn btn-danger delete-database-btn" data-id="${query.id}">
+                        Delete
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    // Add event listeners to update buttons
+    document.querySelectorAll('.update-query-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const name = button.dataset.name;
+            const description = button.dataset.description;
+            const queryText = button.dataset.queryText;
+            const isActive = button.dataset.isActive;
+
+            // Call the function to show the update modal with the selected database's data
+            showUpdateQueryModal(name, description, queryText, isActive);
+        });
+    });
+
+    // Add event listeners to delete buttons
+    document.querySelectorAll('.delete-database-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            selectedQueryName = button.dataset.name;
+            showQueryConfirmation(selectedQueryConnName);
+        });
+    });
 }
 
 // Execute query
 async function executeQuery(queryId = null) {
     try {
         const endpoint = queryId ? 
-            `/api/queries/execute/${queryId}` : 
-            '/api/queries/execute-adhoc';
+            `/api/sybase/execute/${queryId}` : 
+            '/api/sybase/execute-adhoc';
 
         const body = queryId ? 
             { databaseId: databaseSelect.value } : 
@@ -158,51 +199,16 @@ async function executeQuery(queryId = null) {
 }
 
 // Display query results
-function displayResults(data) {
-    queryResults.style.display = 'block';
-    document.getElementById('rows-count').textContent = `Rows: ${data.metadata.rowCount}`;
-    document.getElementById('execution-time').textContent = `Time: ${data.metadata.duration}ms`;
-
-    const table = document.getElementById('results-table');
-    const thead = table.querySelector('thead');
-    const tbody = table.querySelector('tbody');
-    thead.innerHTML = '';
-    tbody.innerHTML = '';
-
-    if (data.data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="100%">No results found</td></tr>';
-        return;
-    }
-
-    // Create header
-    const headerRow = document.createElement('tr');
-    Object.keys(data.data[0]).forEach(key => {
-        const th = document.createElement('th');
-        th.textContent = key;
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-
-    // Create rows
-    data.data.forEach(row => {
-        const tr = document.createElement('tr');
-        Object.values(row).forEach(value => {
-            const td = document.createElement('td');
-            td.textContent = value ?? 'NULL';
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-}
 
 // Edit query
 async function editQuery(queryId) {
     try {
-        const response = await fetch(`/api/queries/${queryId}`, {
+        const response = await fetch(`/api/postgres/queries/${queryId}`, {
             method: 'GET',
             credentials: 'include',
             headers: {
-                'Accept': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
             }
         });
 
@@ -230,9 +236,13 @@ async function deleteQuery(queryId) {
     }
 
     try {
-        const response = await fetch(`/api/queries/${queryId}`, {
+        const response = await fetch(`/api/postgres/queries${queryId}`, {
             method: 'DELETE',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {

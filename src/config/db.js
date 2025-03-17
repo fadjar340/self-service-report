@@ -9,10 +9,10 @@ const sequelize = new Sequelize({
     password: process.env.DB_PASSWORD || 'postgres',
     logging: false,
     pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
+        max: parseInt(process.env.SQL_POOL_MAX) || 10,
+        min: parseInt(process.env.SQL_POOL_MIN) || 0,
+        acquire: parseInt(process.env.SQL_CONNECTION_TIMEOUT) || 30000,
+        idle: parseInt(process.env.SQL_POOL_IDLE_TIMEOUT) || 30000
     },
     retry: {
         max: 5,
@@ -30,20 +30,12 @@ const sequelize = new Sequelize({
     }
 });
 
-// Test database connection
-async function testConnection() {
-    try {
-        await sequelize.authenticate();
-        console.log('Database connection has been established successfully.');
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
-        // Wait for 5 seconds before retrying
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        return testConnection();
-    }
-}
-
-// Initialize connection
-testConnection();
+sequelize.authenticate()
+    .then(() => {
+        console.log('PostgreSQL database connection has been established successfully.');
+    })
+    .catch(err => {
+        console.error('Unable to connect to the PostgreSQL database:', err);
+    });
 
 module.exports = sequelize;

@@ -3,15 +3,14 @@ let selectedQueryId = null;
 
 // DOM Elements
 const elements = {
-    //adminDashboardBtn: document.getElementById('adminDashboardBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
     addQueryBtn: document.getElementById('addQueryBtn'),
     queryForm: document.getElementById('queryForm'),
     closeModalBtn: document.getElementById('closeModalBtn'),
     cancelBtn: document.getElementById('cancelBtn'),
     closeDeleteModalBtn: document.getElementById('closeDeleteModalBtn'),
-    cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
     confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+    cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
     queryModal: document.getElementById('queryModal'),
     deleteModal: document.getElementById('deleteModal'),
     queriesTableBody: document.getElementById('queriesTableBody'),
@@ -27,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupEventListeners() {
     // Navigation buttons
-    //elements.adminDashboardBtn.addEventListener('click', () => window.location.href = '/admin.html');
     elements.logoutBtn.addEventListener('click', logout);
 
     // Query management buttons
@@ -46,11 +44,14 @@ function setupEventListeners() {
 }
 
 // Check if user is authenticated and has admin role
-// Check if user is authenticated and has admin role
 async function checkAuthAndRedirect() {
     try {
         const response = await fetch('/api/auth/current-user', {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            }
         });
 
         if (!response.ok) {
@@ -59,8 +60,7 @@ async function checkAuthAndRedirect() {
 
         const data = await response.json();
         if (!data.user || data.user.role !== 'admin') {
-            // Redirect non-admin users to index.html instead of admin.html
-            window.location.href = '/index.html'; // <- Changed this line
+            window.location.href = '/admin.html';
             return;
         }
 
@@ -76,11 +76,12 @@ async function checkAuthAndRedirect() {
 async function loadQueries() {
     try {
         showLoading(true);
-        const response = await fetch('/api/queries/loadQueries', {
+        const response = await fetch('/api/postgres/queries', {
             credentials: 'include',
             headers: {
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            },
         });
 
         if (!response.ok) {
@@ -104,27 +105,25 @@ async function loadQueries() {
 // Display queries in the table
 function displayQueries(queries) {
     if (!queries || !Array.isArray(queries)) {
-        //console.error('Expected an array of databases, but received:', databases);
         showError('Invalid data format');
         return;
     }
     elements.queriesTableBody.innerHTML = queries.map(query => `
-        <trdata-id="${query.id}" data-is-deleted="${query.isDeleted}">>
+        <tr data-id="${query.id}" data-is-deleted="${query.isDeleted}">
             <td>${query.name}</td>
             <td>${query.description || 'N/A'}</td>
             <td>${query.queryText}</td>
-            <td>${new Date(query.createdAt).toLocaleString()}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-edit" data-query-id="${query.id}" data-name="${query.name}" data-description="${query.description}" data-query-text="${query.queryText}">
+                    <button class="btn btn-primary" data-query-id="${query.id}" data-name="${query.name}" data-description="${query.description}" data-query-text="${query.queryText}">
                         <i class="fas fa-edit"></i>
                         Edit
                     </button>
-                    <button class="btn-delete" data-query-id="${query.id}">
+                    <button class="btn btn-danger" data-query-id="${query.id}">
                         <i class="fas fa-trash-alt"></i>
                         Delete
                     </button>
-                    <button class="btn-execute" data-query-id="${query.id}">
+                    <button class="btn btn-primary" data-query-id="${query.id}">
                         <i class="fas fa-play"></i>
                         Execute
                     </button>
@@ -203,13 +202,14 @@ async function handleQuerySubmit(event) {
     try {
         showLoading(true);
         const url = selectedQueryId 
-            ? `/api/queries/saveQuery/${selectedQueryId}`
-            : '/api/queries/saveQuery';
+            ? `/api/postgres/queries/${selectedQueryId}`
+            : '/api/postgres/queries';
         
         const response = await fetch(url, {
             method: selectedQueryId ? 'PUT' : 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
             },
             credentials: 'include',
             body: JSON.stringify(queryData)
@@ -235,9 +235,13 @@ async function handleQuerySubmit(event) {
 async function confirmDelete() {
     try {
         showLoading(true);
-        const response = await fetch(`/api/queries/deleteQuery/${selectedQueryId}`, {
+        const response = await fetch(`/api/postgres/queries/${selectedQueryId}`, {
             method: 'DELETE',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
+            }
         });
 
         if (!response.ok) {
@@ -261,7 +265,7 @@ async function confirmDelete() {
 async function executeQuery(queryId) {
     try {
         showLoading(true);
-        const response = await fetch(`/api/queries/execute/${queryId}`, {
+        const response = await fetch(`/api/sybase/execute/${queryId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -298,13 +302,11 @@ function showLoading(isLoading) {
 
 // Show success message
 function showSuccess(message) {
-    // Implement a toast notification system here
     alert(message);
 }
 
 // Show error message
 function showError(message) {
-    // Implement a toast notification system here
     alert('Error: ' + message);
 }
 
@@ -313,12 +315,16 @@ async function logout() {
     try {
         await fetch('/api/auth/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
     } catch (error) {
         console.error('Logout error:', error);
     } finally {
-        sessionStorage.clear();
+        // Clear the token from localStorage
+        localStorage.removeItem('token');
         window.location.href = '/index.html';
     }
 }

@@ -152,6 +152,10 @@ body.login-page {
     transition: border-color 0.2s;
 }
 
+.form-group input[type="checkbox"] {
+    display: block;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
