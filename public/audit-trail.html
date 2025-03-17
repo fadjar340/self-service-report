@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Management</title>
+    <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Font Awesome for icons -->
+</head>
+<body>
+   <!-- Sidebar -->
+   <aside class="sidebar">
+    <div class="sidebar-header">
+        <h2>Menu</h2>
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li>
+                <a href="/admin.html">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="/database-management.html">
+                    <i class="fas fa-database"></i> Database Management
+                </a>
+            </li>
+            <li>
+                <a href="/health-check.html">
+                    <i class="fas fa-heartbeat"></i> Health Check Monitoring
+                </a>
+            </li>
+            <li>
+                <a href="/audit-trail.html">
+                    <i class="fas fa-clipboard-list"></i> Audit Trail Query
+                </a>
+            </li>
+            <li>
+                <a href="/user-management.html">
+                    <i class="fas fa-users-cog"></i> User Management
+                </a>
+            </li>
+            <li>
+                <a href="/database.html">
+                    <i class="fas fa-code"></i> Query Management
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button id="sidebarToggle" class="btn btn-icon">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1>Admin Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span class="user-info">Welcome, <span id="username"></span></span>
+            <span class="user-role">Role: <span id="userRole"></span></span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button> <!-- Ensure this ID matches -->
+        </div>
+    </header>
+    <nav class="navbar">
+        <a href="#" class="navbar-brand">Audit Trail</a>
+    </nav>
+
+</main>
+</body>
+</html>
