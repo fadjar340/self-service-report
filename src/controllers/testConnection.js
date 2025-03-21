@@ -1,5 +1,5 @@
 // test-connection.js (Server-side)
-const { Connection, Request } = require('tedious');
+const odbc = require('odbc');
 const express = require('express');
 const router = express.Router();
 

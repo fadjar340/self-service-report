@@ -1,11 +1,17 @@
 const express = require('express');
-const sybaseTdsController = require('../controllers/sybaseTdsController');
-const { protect, isAdmin } = require('../middleware/authMiddleware');
+const sybaseConnectionController = require('../controllers/sybaseConnectionController');
+const sybaseQueryController = require('../controllers/sybaseQueryController');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.post('/test-connection', sybaseTdsController.testConnection);
-router.post('/execute', protect, sybaseTdsController.executeQuery);
-router.post('/execute-adhoc', protect, sybaseTdsController.executeAdHocQuery);
+// Test connection to Sybase
+router.post('/test-connection/:id', protect, sybaseConnectionController.testConnection);
+
+// Execute a saved query against Sybase
+router.post('/execute/:databaseId', protect, sybaseQueryController.executeQuery);
+
+// Execute an ad-hoc query against Sybase
+router.post('/execute-adhoc/:id', protect, sybaseQueryController.executeAdHocQuery);
 
 module.exports = router;

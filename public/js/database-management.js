@@ -105,7 +105,7 @@ async function loadDatabases() {
 // Display databases in the table
 function displayDatabases(databases) {
     elements.databasesTableBody.innerHTML = databases.map(database => `
-        <tr data-id="${database.id}"> 
+        <tr> 
             <td>${database.conn_name}</td>
             <td>${database.host}</td>
             <td>${database.port}</td>
@@ -115,7 +115,7 @@ function displayDatabases(databases) {
             <td>
                 <div class="action-buttons">
                     <!-- Test Connection Button -->
-                    <button class="btn btn-secondary test-connection" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}">
+                    <button class="btn btn-secondary test-connection" data-id="${database.id}" >
                         Test Connection
                     </button>
                     <!-- Update Button -->
@@ -155,17 +155,12 @@ function displayDatabases(databases) {
         });
     });
 
+
     // Add event listeners to test connection buttons
     document.querySelectorAll('.test-connection').forEach(button => {
         button.addEventListener('click', () => {
             const buttonData = {
-                id: button.dataset.id,
-                connName: button.dataset.connName,
-                host: button.dataset.host,
-                port: button.dataset.port,
-                databaseName: button.dataset.databaseName,
-                username: button.dataset.username,
-                password: button.dataset.password
+                id: button.dataset.id
             };
             testDatabaseConnection(buttonData);
         });
@@ -288,43 +283,30 @@ async function confirmDelete() {
 }
 
 // Test database connection
+// Test database connection
+// Test database connection
 async function testDatabaseConnection(buttonData) {
-    console.log('Button data:', buttonData); // Add this line to debug
+    console.log('Testing connection for database ID:', buttonData.id);
 
     try {
-        const response = await fetch('/api/sybase/test-connection', {
+        const response = await fetch(`/api/sybase/test-connection/${buttonData.id}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored in localStorage
-            },
-            body: JSON.stringify({
-                conn_name: buttonData.connName,
-                host: buttonData.host,
-                port: buttonData.port,
-                database_name: buttonData.databaseName || '', // Ensure database_name is included, even if empty
-                username: buttonData.username,
-                password: buttonData.password
-            })
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
-        console.log('Request body:', {
-            conn_name: buttonData.connName,
-            host: buttonData.host,
-            port: buttonData.port,
-            database_name: buttonData.databaseName || '',
-            username: buttonData.username,
-            password: buttonData.password
-        }); // Add this line to debug
+        const responseData = await response.json();
 
         if (!response.ok) {
-            throw new Error(await response.text());
+            throw new Error(responseData.error || 'Connection test failed');
         }
 
-        alert('Connection successful!');
+        alert('Connection test successful');
     } catch (error) {
         console.error('Error testing connection:', error);
-        alert(`Connection failed: ${error.message}`);
+        alert(`Connection test failed: ${error.message}`);
     }
 }
 

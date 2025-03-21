@@ -1,9 +1,19 @@
+const elements = {
+    logoutBtn: document.getElementById('logoutBtn'),
+};
+
+
 // Check authentication status on page load
 document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
     await loadQueries();
-    initializeDatePickers();
+    await setupEventListeners();
 });
+
+function setupEventListeners() {
+    // Navigation buttons
+    elements.logoutBtn.addEventListener('click', logout);
+}
 
 // Function to check authentication status
 async function checkAuth() {
@@ -27,71 +37,8 @@ async function checkAuth() {
         }
 
         const data = await response.json();
-        if (data.user.role === 'admin') {
-            window.location.href = '/user.html';
-            return;
-        }
         updateUserInfo(data.user);
     } catch (error) {
-        window.location.href = '/index.html';
-    }
-}
-
-// Function to handle login
-async function login(event) {
-    event.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('error-message');
-
-    try {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ username, password })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
-        }
-
-        localStorage.setItem('token', data.token);
-
-        errorDiv.textContent = '';
-        errorDiv.style.display = 'none';
-
-        if (data.user.role === 'admin') {
-            window.location.href = '/user.html';
-        } else {
-            window.location.href = '/ordinary-user.html';
-        }
-    } catch (error) {
-        errorDiv.textContent = error.message || 'Login failed. Please try again.';
-        errorDiv.style.display = 'block';
-    }
-}
-
-// Function to handle logout
-async function logout() {
-    try {
-        await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    } finally {
-        localStorage.removeItem('token');
         window.location.href = '/index.html';
     }
 }
@@ -106,69 +53,6 @@ function updateUserInfo(user) {
     const roleElements = document.getElementsByClassName('user-role');
     for (const element of roleElements) {
         element.textContent = `Role: ${user.role}`;
-    }
-
-    const adminElements = document.getElementsByClassName('admin-only');
-    for (const element of adminElements) {
-        element.style.display = user.role === 'admin' ? 'block' : 'none';
-    }
-}
-
-// Add event listeners if elements exist
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', login);
-    }
-
-    const logoutButton = document.getElementById('logout-button');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', logout);
-    }
-});
-
-// Initialize date pickers
-function initializeDatePickers() {
-    const startDatePicker = new window.DatePicker(document.getElementById('startDatePicker'), {
-        dateFormat: 'yyyy-MM-dd HH:mm',
-        showTimeSelect: true,
-        timeCaption: 'Time',
-        onChange: (date) => {
-            document.getElementById('startDate').value = date;
-            validateDates();
-        }
-    });
-
-    const endDatePicker = new window.DatePicker(document.getElementById('endDatePicker'), {
-        dateFormat: 'yyyy-MM-dd HH:mm',
-        showTimeSelect: true,
-        timeCaption: 'Time',
-        onChange: (date) => {
-            document.getElementById('endDate').value = date;
-            validateDates();
-        }
-    });
-
-    // Set default dates
-    const now = new Date();
-    startDatePicker.setDate(now);
-    endDatePicker.setDate(now);
-}
-
-function validateDates() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        if ((end - start) / (1000 * 60 * 60 * 24) > 7) {
-            alert('Date range cannot exceed 7 days');
-            document.getElementById('executeQueryBtn').disabled = true;
-        } else {
-            document.getElementById('executeQueryBtn').disabled = false;
-        }
     }
 }
 
@@ -189,23 +73,84 @@ async function loadQueries() {
         }
 
         const data = await response.json();
-        const querySelect = document.getElementById('querySelect');
-
-        data.queries.forEach(query => {
-            const option = document.createElement('option');
-            option.value = query.id;
-            option.textContent = query.name;
-            querySelect.appendChild(option);
-        });
+        displayQueries(data.queries);
     } catch (error) {
         console.error('Error loading queries:', error);
         alert('Failed to load queries');
     }
 }
 
+function displayQueries(queries) {
+    const queriesTableBody = document.getElementById('queriesTableBody');
+    
+    queriesTableBody.innerHTML = queries.map(query => `
+        <tr data-id="${query.id}">
+            <td>${query.name}</td>
+            <td>${query.description || 'N/A'}</td>
+            <td>${query.conn_name || 'N/A'}</td>
+            <td>${query.database_name || 'N/A'}</td>
+            <td>
+                <button class="btn btn-primary execute-btn" data-id="${query.id}">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    document.querySelectorAll('.execute-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const queryId = button.dataset.id;
+            showParameterModal(queryId);
+        }); 
+    });
+}
+
+function showParameterModal(queryId) {
+    document.getElementById('parameterModal').style.display = 'block';
+    document.getElementById('hiddenQueryId').value = queryId;
+    
+    // Initialize Flatpickr datepickers
+    flatpickr("#startDate", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        defaultDate: new Date(),
+        onChange: (selectedDates) => {
+            document.getElementById('startDate').value = selectedDates[0].toISOString();
+            validateDates();
+        }
+    });
+    
+    flatpickr("#endDate", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        defaultDate: new Date(),
+        onChange: (selectedDates) => {
+            document.getElementById('endDate').value = selectedDates[0].toISOString();
+            validateDates();
+        }
+    });
+}
+
+function validateDates() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if ((end - start) / (1000 * 60 * 60 * 24) > 7) {
+            alert('Date range cannot exceed 7 days');
+            document.getElementById('executeQueryInModalBtn').disabled = true;
+        } else {
+            document.getElementById('executeQueryInModalBtn').disabled = false;
+        }
+    }
+}
+
 // Execute query functionality
-document.getElementById('executeQueryBtn').addEventListener('click', async () => {
-    const queryId = document.getElementById('querySelect').value;
+document.getElementById('executeQueryInModalBtn').addEventListener('click', async () => {
+    const queryId = document.getElementById('hiddenQueryId').value;
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     
@@ -244,75 +189,6 @@ document.getElementById('executeQueryBtn').addEventListener('click', async () =>
 });
 
 function displayResultsModal(data) {
-    // Load the modal template
-    const modalHTML = `
-        <div class="modal" id="resultsModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Query Results</h2>
-                    <button class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="results-controls">
-                        <label for="rowsPerPage">Rows per page:</label>
-                        <select id="rowsPerPage">
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <div class="results-info" id="resultsInfo">Showing ${data.metadata.rowCount} results</div>
-                    </div>
-                    <div class="table-container">
-                        <table id="resultsTable">
-                            <thead>
-                                <tr id="resultsHeader"></tr>
-                            </thead>
-                            <tbody id="resultsBody"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination" id="paginationControls"></div>
-                </div>
-                <div class="modal-footer">
-                    <button id="downloadCsvBtn" class="btn btn-secondary">Download CSV</button>
-                    <button id="downloadXlsBtn" class="btn btn-secondary">Download XLS</button>
-                    <button class="btn btn-primary" id="closeResultsModal">Close</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    const modal = document.getElementById('resultsModal');
-    modal.style.display = 'block';
-    
-    // Populate the results table
-    populateResultsTable(data);
-    
-    // Add event listeners
-    document.querySelector('.close-btn').addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-    
-    document.getElementById('closeResultsModal').addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
-    
-    document.getElementById('downloadCsvBtn').addEventListener('click', () => {
-        downloadResults('csv');
-    });
-    
-    document.getElementById('downloadXlsBtn').addEventListener('click', () => {
-        downloadResults('xls');
-    });
-    
-    document.getElementById('rowsPerPage').addEventListener('change', () => {
-        paginateResults();
-    });
-}
-
-function populateResultsTable(data) {
     const resultsHeader = document.getElementById('resultsHeader');
     const resultsBody = document.getElementById('resultsBody');
     const resultsInfo = document.getElementById('resultsInfo');
@@ -358,6 +234,9 @@ function populateResultsTable(data) {
     
     // Initialize pagination
     paginateResults();
+    
+    document.getElementById('resultsModal').style.display = 'block';
+    document.getElementById('parameterModal').style.display = 'none';
 }
 
 function paginateResults() {
@@ -416,7 +295,79 @@ function showPage(pageNumber) {
     });
 }
 
-function downloadResults(format) {
+document.getElementById('downloadCsvBtn').addEventListener('click', async () => {
+    const queryId = document.getElementById('hiddenQueryId').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (!queryId || !startDate || !endDate) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/sybase/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                queryId,
+                startDate,
+                endDate
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+        
+        const data = await response.json();
+        downloadResults(data, 'csv');
+    } catch (error) {
+        console.error('Error downloading CSV:', error);
+        alert(`Error downloading CSV: ${error.message}`);
+    }
+});
+
+document.getElementById('downloadXlsBtn').addEventListener('click', async () => {
+    const queryId = document.getElementById('hiddenQueryId').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (!queryId || !startDate || !endDate) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/sybase/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                queryId,
+                startDate,
+                endDate
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+        
+        const data = await response.json();
+        downloadResults(data, 'xls');
+    } catch (error) {
+        console.error('Error downloading XLS:', error);
+        alert(`Error downloading XLS: ${error.message}`);
+    }
+});
+
+function downloadResults(data, format) {
     const resultsTable = document.getElementById('resultsTable');
     const rows = Array.from(resultsTable.querySelectorAll('tr'));
     
@@ -444,5 +395,37 @@ function showLoading(isLoading) {
         document.body.appendChild(loader);
     } else {
         document.body.removeChild(loader);
+    }
+}
+
+// Close modals when clicking the close button
+document.querySelector('.close-btn').addEventListener('click', () => {
+    document.getElementById('resultsModal').style.display = 'none';
+});
+
+document.getElementById('closeParameterModalBtn').addEventListener('click', () => {
+    document.getElementById('parameterModal').style.display = 'none';
+});
+
+document.getElementById('closeResultsModal').addEventListener('click', () => {
+    document.getElementById('resultsModal').style.display = 'none';
+});
+
+// Logout function
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    } finally {
+        // Clear the token from localStorage
+        localStorage.removeItem('token');
+        window.location.href = '/index.html';
     }
 }

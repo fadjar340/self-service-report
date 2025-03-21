@@ -127,7 +127,7 @@ body.login-page {
 
 /* Forms */
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -211,6 +211,7 @@ tr:hover {
 
 .table-container {
     overflow-x: auto;
+    margin: 20px 0;
 }
 
 /* Saved Queries */
@@ -260,7 +261,7 @@ tr:hover {
 .btn-danger:hover {
     background-color: #c62828;
 }
-/* Add to buttons section */
+
 .btn-warning {
     background-color: var(--warning-color);
     color: white;
@@ -269,6 +270,7 @@ tr:hover {
 .btn-warning:hover {
     background-color: #e6a200;
 }
+
 /* Modal */
 .modal {
     display: none; /* Hidden by default */
@@ -293,17 +295,22 @@ tr:hover {
     align-items: center;
 }
 
-/* Close Button */
-.closeModal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
     font-size: 24px;
     cursor: pointer;
     color: var(--text-secondary);
 }
 
-.closeModal:hover {
+.close-btn:hover {
     color: var(--text-color);
 }
 
@@ -421,6 +428,7 @@ tr:hover {
     padding: 8px 12px;
     font-size: 14px;
 }
+
 /* Sidebar */
 .sidebar {
     width: 250px;
@@ -512,4 +520,108 @@ tr:hover {
     padding: 24px;
 }
 
+/* DatePicker Styles */
+.react-datepicker-wrapper {
+    width: 100%;
+}
 
+.react-datepicker__input-container input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Results Table Styles */
+#resultsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#resultsTable th, #resultsTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#resultsTable th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+/* Pagination Styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.page-btn {
+    padding: 5px 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.page-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Form Styles Updates */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Results Controls */
+.results-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#rowsPerPage {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.results-info {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Query Table */
+.query-table {
+    margin-top: 20px;
+}
+
+.query-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.query-table th, .query-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.query-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.execute-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}

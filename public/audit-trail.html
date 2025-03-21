@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Management</title>
     <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="css/all.min.css"> <!-- Font Awesome for icons -->
 </head>
 <body>
    <!-- Sidebar -->
@@ -41,7 +41,7 @@
                 </a>
             </li>
             <li>
-                <a href="/database.html">
+                <a href="/query-management.html">
                     <i class="fas fa-code"></i> Query Management
                 </a>
             </li>
@@ -54,9 +54,6 @@
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <button id="sidebarToggle" class="btn btn-icon">
-                <i class="fas fa-bars"></i>
-            </button>
             <h1>Admin Dashboard</h1>
         </div>
         <div class="header-right">
@@ -68,7 +65,13 @@
     <nav class="navbar">
         <a href="#" class="navbar-brand">Audit Trail</a>
     </nav>
+    <div id="loader" class="hidden">
+        <div class="spinner"></div>
+    </div>
 
+    <footer class="dashboard-footer">
+        <p>© 2025 Self-Service Report System. All rights reserved.</p>
+    </footer>
 </main>
 </body>
 </html>

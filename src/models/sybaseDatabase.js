@@ -1,6 +1,8 @@
 const { Model, DataTypes } = require('sequelize');
-const sequelize = require('../../config/db');
+const sequelize = require('../config/db');
 const AuditTrail = require('./auditTrail');
+const DatabaseQuery = require('./databaseQuery');
+const AdminUser = require('./adminUser');
 
 class SybaseDatabase extends Model {
     getConnectionConfig() {
@@ -226,14 +228,12 @@ SybaseDatabase.init({
     }
 });
 
-SybaseDatabase.associate = (models) => {
-    SybaseDatabase.belongsTo(models.AdminUser, { as: 'creator', foreignKey: 'createdBy' });
-    SybaseDatabase.belongsTo(models.AdminUser, { as: 'updater', foreignKey: 'updatedBy' });
-    SybaseDatabase.belongsTo(models.AdminUser, { as: 'deleter', foreignKey: 'deletedBy' });
-    SybaseDatabase.hasMany(models.DatabaseQuery, {
-        foreignKey: 'databaseId',
-        as: 'databaseQueries'
-    });
+executeQuery = async (queryText) => {
+    const connectionConfig = this.getConnectionConfig();
+    // Implement your database execution logic here
+    // This is a placeholder for actual execution
+    return { result: 'Query executed', queryText };
 };
+
 
 module.exports = SybaseDatabase;

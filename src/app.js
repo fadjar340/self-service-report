@@ -7,6 +7,8 @@ const sequelize = require('./config/db');
 const logger = require('./utils/logger');
 const jwt = require('jsonwebtoken');
 
+require('./models/associations');
+
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const postgresRoutes = require('./routes/postgresRoutes');
@@ -17,7 +19,19 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "*"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+        fontSrc: ["'self'"],
+        connectSrc: ["'self'"]
+      }
+    }
+  }));
+
 app.use(cors({
     origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000' || '*',
     credentials: true
@@ -25,8 +39,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minuteswget 
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000
 });
 app.use('/api/', limiter);
 
@@ -43,6 +57,7 @@ sequelize.authenticate()
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+//app.use('/node_modules', express.static(path.join(__dirname, 'node_modules')));
 
 // JWT protection middleware
 const protect = (req, res, next) => {

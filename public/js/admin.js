@@ -1,10 +1,7 @@
-// Global variables
-let selectedUserId = null;
+
 
 // DOM Elements
 const elements = {
-    tabButtons: document.querySelectorAll('.tab-btn'),
-    tabContents: document.querySelectorAll('.tab-content'),
     logoutBtn: document.getElementById('logoutBtn'),
     adminDashboardBtn: document.getElementById('adminDashboardBtn'),
     databaseManagementBtn: document.getElementById('databaseManagementBtn'),

@@ -1,16 +1,17 @@
 const { Model, DataTypes, Op } = require('sequelize');
 const sequelize = require('../config/db');
+const SybaseDatabase = require('./sybaseDatabase');
 
 class DatabaseQuery extends Model {
     toSafeObject() {
-        const { name, description, queryText, updatedAt, updatedBy, createdAt, createdBy, deletedAt, deletedBy, isActive, isDeleted, databaseId } = this;
-        return { name, description, queryText, updatedAt, updatedBy, createdAt, createdBy, deletedAt, deletedBy, isActive, isDeleted, databaseId };
+        const { id, name, description, queryText, updatedAt, updatedBy, createdAt, createdBy, deletedAt, deletedBy, isActive, isDeleted, databaseId } = this;
+        return { id, name, description, queryText, updatedAt, updatedBy, createdAt, createdBy, deletedAt, deletedBy, isActive, isDeleted, databaseId };
     }
 
     static validateQuery(queryText) {
         const upperQuery = queryText.trim().toUpperCase();
 
-        if (!upperQuery.startsWith('SELECT') && !upperQuery.startsWith('WITH')) {
+        if (!upperQuery.startsWith('SELECT') && !upperQuery.startsWith('WITH') && !upperQuery.startsWith('EXEC')) {
             throw new Error('Query must start with SELECT or WITH');
         }
 
@@ -22,7 +23,6 @@ class DatabaseQuery extends Model {
             'ALTER',
             'CREATE',
             'TRUNCATE',
-            'EXEC',
             'EXECUTE'
         ];
 
@@ -111,11 +111,28 @@ DatabaseQuery.init({
         defaultValue: DataTypes.NOW,
         field: 'updatedAt'
     },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: true,
+        field: 'isActive'
+    },
     isDeleted: {
         type: DataTypes.BOOLEAN,
         allowNull: true,
         defaultValue: false,
         field: 'isDeleted'
+    },
+    deletedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'admin_users',
+            key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
+        field: 'deletedBy'
     },
     databaseId: {
         type: DataTypes.INTEGER,
@@ -193,20 +210,6 @@ DatabaseQuery.init({
     }
 });
 
-DatabaseQuery.associate = (models) => {
-    DatabaseQuery.belongsTo(models.AdminUser, {
-        as: 'creator',
-        foreignKey: 'createdBy'
-    });
-    DatabaseQuery.belongsTo(models.AdminUser, {
-        as: 'updater',
-        foreignKey: 'updatedBy'
-    });
-    DatabaseQuery.belongsTo(models.SybaseDatabase, {
-        foreignKey: 'databaseId',
-        as: 'sybaseDatabase'
-    });
-};
 
 DatabaseQuery.findOneById = async function (id) {
     return this.findOne({

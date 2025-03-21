@@ -1,5 +1,7 @@
 const { Model, DataTypes, QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const SybaseDatabase = require('./sybaseDatabase')
+const DatabaseQuery = require('./databaseQuery')
 
 class AdminUser extends Model {
     async validatePassword(password) {
@@ -152,12 +154,5 @@ AdminUser.init({
     }
 });
 
-
-
-AdminUser.associate = (models) => {
-    AdminUser.hasMany(models.SybaseDatabase, { as: 'createdDatabases', foreignKey: 'createdBy' });
-    AdminUser.hasMany(models.SybaseDatabase, { as: 'updatedDatabases', foreignKey: 'updatedBy' });
-    AdminUser.hasMany(models.SybaseDatabase, { as: 'deletedDatabases', foreignKey: 'deletedBy' });
-};
 
 module.exports = AdminUser;

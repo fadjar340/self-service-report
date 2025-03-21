@@ -1,77 +1,63 @@
-const { Connection, Request } = require('tedious');
+// sybaseQueryExecutor.js
+const odbc = require('odbc');
 
 class SybaseQueryExecutor {
     constructor() {
         this.connections = new Map();
     }
 
-    getConnection(database) {
+    async getConnection(database) {
         const connectionKey = `${database.host}_${database.port}_${database.database_name}`;
         
         if (this.connections.has(connectionKey)) {
             return this.connections.get(connectionKey);
         }
 
-        const connection = new Connection({
-            server: database.host,
-            authentication: {
-                type: 'default',
-                options: {
-                    userName: database.username,
-                    password: database.password
-                }
-            },
-            options: {
-                database: database.database_name,
-                port: database.port
-            }
-        });
+        const connectionString = `
+            Driver={FreeTDS};
+            Server=${database.host};
+            Port=${database.port};
+            Database=${database.database_name};
+            UID=${database.username};
+            PWD=${database.password};
+            TDS_Version=5.0;
+        `;
 
-        connection.on('connect', (err) => {
-            if (err) {
-                console.error(`Failed to connect to Sybase database ${database.conn_name}:`, err);
-                this.connections.delete(connectionKey);
-            } else {
-                console.log(`Connected to Sybase database ${database.conn_name}`);
-                this.connections.set(connectionKey, connection);
-            }
-        });
+        let connection;
+        try {
+            connection = await odbc.connect(connectionString);
+            this.connections.set(connectionKey, connection);
+            console.log(`Connected to Sybase database ${database.conn_name}`);
+        } catch (err) {
+            console.error(`Error creating connection for ${database.conn_name}:`, err);
+            throw err;
+        }
 
-        connection.connect();
-        
         return connection;
     }
 
     async executeQuery(database, queryText) {
-        const connection = this.getConnection(database);
-        return new Promise((resolve, reject) => {
-            const request = new Request(queryText, (err, rowCount) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve({ rowCount });
-            });
-
-            const rows = [];
-            request.on('row', (columns) => {
-                const row = {};
-                columns.forEach((column) => {
-                    row[column.metadata.colName] = column.value;
-                });
-                rows.push(row);
-            });
-
-            connection.execSql(request);
-        }).then(result => ({
-            ...result,
-            data: rows
-        }));
+        const connection = await this.getConnection(database);
+        
+        try {
+            const results = await connection.query(queryText);
+            return { data: results, rowCount: results.length };
+        } catch (err) {
+            console.error(`Query error on ${database.conn_name}:`, err);
+            throw err;
+        }
     }
 
     closeAllConnections() {
         for (const [key, connection] of this.connections) {
-            connection.close();
-            this.connections.delete(key);
+            connection.close()
+                .then(() => {
+                    console.log(`Closed connection to ${key}`);
+                    this.connections.delete(key);
+                })
+                .catch(err => {
+                    console.error(`Error closing connection ${key}:`, err);
+                });
         }
     }
 }

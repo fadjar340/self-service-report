@@ -11,8 +11,9 @@ const getDatabases = async (req, res) => {
         const { page = 1, limit = 10, search } = req.query;
 
         const where = {
-            isDeleted: false // Add this line
+            isDeleted: false
         };
+
 
         if (search) {
             where.id = { [Op.like]: `%${search}%` };
@@ -23,6 +24,7 @@ const getDatabases = async (req, res) => {
             where,
             limit: parseInt(limit),
             offset: (page - 1) * limit,
+            order: [['id', 'ASC']]
         });
 
         const total = await SybaseDatabase.count({ where });
@@ -49,17 +51,17 @@ const getDatabase = async (req, res) => {
         const database = await SybaseDatabase.findByPk(id, {
             include: [
                 {
-                    model: req.app.get('models').AdminUser,
+                    model: AdminUser, // Use the imported model
                     as: 'creator',
                     attributes: ['username']
                 },
                 {
-                    model: req.app.get('models').AdminUser,
+                    model: AdminUser, // Use the imported model
                     as: 'updater',
                     attributes: ['username']
                 },
                 {
-                    model: req.app.get('models').AdminUser,
+                    model: AdminUser, // Use the imported model
                     as: 'deleter',
                     attributes: ['username']
                 }
@@ -242,12 +244,17 @@ const deleteDatabase = async (req, res) => {
     }
 };
 
+
 const getQueries = async (req, res) => {
     try {
         const { page = 1, limit = 10, search } = req.query;
 
+//        AdminUser.associate();
+//        SybaseDatabase.associate();
+//        DatabaseQuery.associate();
+        
         const where = {
-            isDeleted: false // Add this line
+            isDeleted: false
         };
 
         if (search) {
@@ -258,14 +265,25 @@ const getQueries = async (req, res) => {
             where,
             limit: parseInt(limit),
             offset: (page - 1) * parseInt(limit),
-            order: [['createdAt', 'DESC']],
+            order: [['id', 'ASC']],
+            include: [
+                {
+                    model: SybaseDatabase,
+                    as: 'sybaseDatabase',
+                    attributes: ['conn_name', 'database_name']
+                }
+            ]
         });
 
         res.json({
-            queries: queries.rows.map(query => query.toSafeObject()),
+            queries: queries.rows.map(query => ({
+                ...query.toSafeObject(),
+                conn_name: query.sybaseDatabase?.conn_name,
+                database_name: query.sybaseDatabase?.database_name
+            })),
             total: queries.count,
             page: parseInt(page),
-            totalPages: Math.ceil(queries.count / parseInt(limit))
+            totalPages: Math.ceil(queries.count / limit)
         });
     } catch (error) {
         console.error('Get queries error:', error);
@@ -280,16 +298,29 @@ const getQuery = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Validate that id is present and is a valid integer
+        if (!id || isNaN(parseInt(id))) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Invalid or missing query ID'
+            });
+        }
+
         const query = await DatabaseQuery.findByPk(id, {
             include: [
                 {
-                    model: req.app.get('models').AdminUser,
+                    model: AdminUser,
                     as: 'creator',
                     attributes: ['username']
                 },
                 {
-                    model: req.app.get('models').AdminUser,
+                    model: AdminUser,
                     as: 'updater',
+                    attributes: ['username']
+                },
+                {
+                    model: AdminUser,
+                    as: 'deleter',
                     attributes: ['username']
                 }
             ]
@@ -321,9 +352,9 @@ const getQuery = async (req, res) => {
 
 const saveQuery = async (req, res) => {
     try {
-        const { name, description, queryText, connName } = req.body;
+        const { name, description, queryText, isActive, databaseId } = req.body;
 
-        if (!name || !queryText || !connName) {
+        if (!name || !queryText || !isActive || !databaseId) {
             return res.status(400).json({
                 error: 'Validation error',
                 message: 'Query name, text, and connection name are required'
@@ -331,7 +362,11 @@ const saveQuery = async (req, res) => {
         }
 
         const database = await SybaseDatabase.findOne({
-            where: { conn_name: connName }
+            where: { 
+                id: databaseId,
+                isActive: true,
+                isDeleted: false
+             }
         });
 
         if (!database) {
@@ -347,6 +382,7 @@ const saveQuery = async (req, res) => {
             queryText,
             createdBy: req.user.id,
             updatedBy: req.user.id,
+            isActive,
             isDeleted: false,
             databaseId: database.id
         });
@@ -387,7 +423,7 @@ const saveQuery = async (req, res) => {
 const updateQuery = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, queryText } = req.body;
+        const { name, description, queryText, isActive, databaseId } = req.body;
 
         const query = await DatabaseQuery.findByPk(id);
         if (!query) {
@@ -408,6 +444,8 @@ const updateQuery = async (req, res) => {
             name,
             description,
             queryText,
+            isActive,
+            databaseId,
             updatedBy: req.user.id
         });
 
@@ -420,6 +458,7 @@ const updateQuery = async (req, res) => {
                 queryId: query.id,
                 name: query.name,
                 description: query.description,
+                isActive: query.isActive,
                 changes: query.changed()
             }
         });

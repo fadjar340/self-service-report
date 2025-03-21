@@ -171,7 +171,8 @@ const getUsers = async (req, res) => {
     try {
         const users = await AdminUser.findAll({
             attributes: ['id', 'username', 'role', 'createdAt', 'isActive','isDeleted'],
-            where: { isDeleted: false }
+            where: { isDeleted: false },
+            order: [['id', 'ASC']],
         });
 
         res.json(users);
