@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.5">
+    <title>Query Results</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Query Results</h1>
+            <button id="closeResultsBtn" class="btn btn-secondary"><i class="fas fa-window-close"></i> Close</button>
+        </header>
+        
+        <div class="page-content">
+            <div class="page-content">
+                <div class="results-controls">
+                    <label for="rowsPerPage">Rows per page:</label>
+                    <select id="rowsPerPage">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <div class="results-info" id="resultsInfo"></div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="results-table">
+                        <thead>
+                            <tr id="resultsHeader"></tr>
+                        </thead>
+                        <tbody id="resultsBody"></tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="paginationControls"></div>
+            </div>
+        
+        <div class="modal-footer">
+            <button id="downloadCsvBtn" class="btn btn-secondary"><i class="fas fa-play"></i> Download CSV</button>
+            <button id="downloadXlsBtn" class="btn btn-secondary"><i class="fas fa-play"></i> Download XLS</button>
+        </div>
+    </div>
+
+    <script src="js/results.js"></script>
+</body>
+</html>
