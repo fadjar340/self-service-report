@@ -54,15 +54,12 @@
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <button id="sidebarToggle" class="btn btn-icon">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h1>Admin User Dashboard</h1>
+            <h1>Admin Dashboard</h1>
         </div>
         <div class="header-right">
             <span class="user-info">Welcome, <span id="username"></span></span>
             <span class="user-role">Role: <span id="userRole"></span></span>
-            <button id="logoutBtn" class="btn btn-danger">Logout</button> <!-- Ensure this ID matches -->
+            <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button> <!-- Ensure this ID matches -->
         </div>
     </header>
 
@@ -77,7 +74,7 @@
             </button>
         </div>
 
-            <div class="table-container">
+            <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
@@ -130,10 +127,10 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" id="cancelModalBtn" class="btn btn-secondary">
-                            Cancel
+                            <i class="fas fa-window-close"></i> Cancel
                         </button>
                         <button type="submit" id="editUserBtn" class="btn btn-primary">
-                            Save
+                            <i class="fas fa-save"></i> Save
                         </button>
                     </div>
                 </form>
@@ -151,10 +148,10 @@
                 <p class="warning-text">Note: You cannot delete your own account.</p>
                 <div class="form-actions">
                     <button id="cancelDeleteBtn" class="btn btn-secondary">
-                        Cancel
+                        <i class="fas fa-window-close"></i> Cancel
                     </button>
                     <button id="confirmDeleteBtn" class="btn btn-delete btn-danger">
-                        Delete
+                        <i class="fas fa-trash-alt"></i> Delete
                     </button>
                 </div>
             </div>

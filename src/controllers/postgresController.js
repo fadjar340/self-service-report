@@ -248,13 +248,10 @@ const deleteDatabase = async (req, res) => {
 const getQueries = async (req, res) => {
     try {
         const { page = 1, limit = 10, search } = req.query;
-
-//        AdminUser.associate();
-//        SybaseDatabase.associate();
-//        DatabaseQuery.associate();
         
         const where = {
-            isDeleted: false
+            isDeleted: false,
+            isActive: true 
         };
 
         if (search) {

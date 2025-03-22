@@ -9,7 +9,7 @@ const router = express.Router();
 router.post('/test-connection/:id', protect, sybaseConnectionController.testConnection);
 
 // Execute a saved query against Sybase
-router.post('/execute/:databaseId', protect, sybaseQueryController.executeQuery);
+router.post('/execute', protect, sybaseQueryController.executeQuery);
 
 // Execute an ad-hoc query against Sybase
 router.post('/execute-adhoc/:id', protect, sybaseQueryController.executeAdHocQuery);

@@ -105,11 +105,6 @@ function displayQueries(queries) {
                     <button class="btn btn-danger delete-btn" data-id="${query.id}">
                         <i class="fas fa-trash-alt"></i> Delete
                     </button>
-                    <button class="btn btn-primary execute-btn" 
-                            data-id="${query.id}"
-                            data-database-id="${query.databaseId}">
-                        <i class="fas fa-play"></i> Execute
-                    </button>
                 </div>
             </td>
         </tr>

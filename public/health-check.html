@@ -3,72 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Management</title>
-    <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
-    <link rel="stylesheet" href="css/all.min.css"> <!-- Font Awesome for icons -->
+    <title>Health Check Monitoring</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/all.min.css">
 </head>
 <body>
-   <!-- Sidebar -->
-   <aside class="sidebar">
-    <div class="sidebar-header">
-        <h2>Menu</h2>
-    </div>
-    <nav class="sidebar-nav">
-        <ul>
-            <li>
-                <a href="/admin.html">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/database-management.html">
-                    <i class="fas fa-database"></i> Database Management
-                </a>
-            </li>
-            <li>
-                <a href="/health-check.html">
-                    <i class="fas fa-heartbeat"></i> Health Check Monitoring
-                </a>
-            </li>
-            <li>
-                <a href="/audit-trail.html">
-                    <i class="fas fa-clipboard-list"></i> Audit Trail Query
-                </a>
-            </li>
-            <li>
-                <a href="/user-management.html">
-                    <i class="fas fa-users-cog"></i> User Management
-                </a>
-            </li>
-            <li>
-                <a href="/query-management.html">
-                    <i class="fas fa-code"></i> Query Management
-                </a>
-            </li>
-        </ul>
-    </nav>
-</aside>
-
-<!-- Main Content -->
-<main class="main-content">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-left">
-            <button id="sidebarToggle" class="btn btn-icon">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h1>Admin Dashboard</h1>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Menu</h2>
         </div>
-        <div class="header-right">
-            <span class="user-info">Welcome, <span id="username"></span></span>
-            <span class="user-role">Role: <span id="userRole"></span></span>
-            <button id="logoutBtn" class="btn btn-danger">Logout</button> <!-- Ensure this ID matches -->
-        </div>
-    </header>
-    <nav class="navbar">
-        <a href="#" class="navbar-brand">Health Check</a>
-    </nav>
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="/admin.html">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/database-management.html">
+                        <i class="fas fa-database"></i> Database Management
+                    </a>
+                </li>
+                <li>
+                    <a href="/health-check.html" class="active">
+                        <i class="fas fa-heartbeat"></i> Health Check Monitoring
+                    </a>
+                </li>
+                <li>
+                    <a href="/audit-trail.html">
+                        <i class="fas fa-clipboard-list"></i> Audit Trail Query
+                    </a>
+                </li>
+                <li>
+                    <a href="/user-management.html">
+                        <i class="fas fa-users-cog"></i> User Management
+                    </a>
+                </li>
+                <li>
+                    <a href="/query-management.html">
+                        <i class="fas fa-code"></i> Query Management
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
 
-</main>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>Health Check Monitoring</h1>
+            </div>
+            <div class="header-right">
+                <span class="user-info">Welcome, <span id="username"></span></span>
+                <span class="user-role">Role: <span id="userRole"></span></span>
+                <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+        
+        <nav class="navbar">
+            <a href="#" class="navbar-brand">Health Check</a>
+        </nav>
+
+        <!-- Health Status Summary -->
+        <section class="health-summary">
+            <div class="health-status">
+                <div id="healthIndicator" class="health-indicator healthy">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Healthy</span>
+                </div>
+                <div class="health-details">
+                    <p>Last Updated: <span id="lastUpdated">--</span></p>
+                    <p>System Uptime: <span id="systemUptime">--</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Health Metrics -->
+        <section class="health-metrics">
+            <div class="metric-card">
+                <h3>CPU Usage</h3>
+                <div class="metric-value">
+                    <span id="cpuUsage">--</span>%
+                    <div class="progress-bar">
+                        <div id="cpuProgressBar" class="progress"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Memory Usage</h3>
+                <div class="metric-value">
+                    <span id="memoryUsage">--</span>%
+                    <div class="progress-bar">
+                        <div id="memoryProgressBar" class="progress"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Database Connections</h3>
+                <div class="metric-value">
+                    <span id="dbConnections">--</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Active Queries</h3>
+                <div class="metric-value">
+                    <span id="activeQueries">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Statistics -->
+        <section class="detailed-stats">
+            <div class="stat-card">
+                <h3>System Information</h3>
+                <div class="stat-details">
+                    <p>Total Memory: <span id="totalMemory">--</span></p>
+                    <p>Used Memory: <span id="usedMemory">--</span></p>
+                    <p>Free Memory: <span id="freeMemory">--</span></p>
+                    <p>System Uptime: <span id="osUptime">--</span></p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Request Statistics</h3>
+                <div class="stat-details">
+                    <p>Total Requests: <span id="totalRequests">--</span></p>
+                    <p>Successful Requests: <span id="successRequests">--</span></p>
+                    <p>Failed Requests: <span id="failedRequests">--</span></p>
+                    <p>Average Response Time: <span id="avgResponseTime">--</span>ms</p>
+                    <p>Error Rate: <span id="errorRate">--</span>%</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Database Statistics</h3>
+                <div class="stat-details">
+                    <p>Total Queries: <span id="totalQueries">--</span></p>
+                    <p>Failed Queries: <span id="failedQueries">--</span></p>
+                    <p>Average Execution Time: <span id="avgExecutionTime">--</span>ms</p>
+                    <p>Database Status: <span id="dbStatus">--</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions -->
+        <section class="actions">
+            <button id="resetStatsBtn" class="btn btn-primary">Reset Statistics</button>
+        </section>
+
+        <!-- Issues (Hidden by default) -->
+        <section id="issuesSection" class="issues hidden">
+            <h3>Current Issues</h3>
+            <ul id="issuesList"></ul>
+        </section>
+    </main>
+    
+    <script src="js/health-check.js"></script>
 </body>
 </html>

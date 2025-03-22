@@ -12,7 +12,7 @@ require('./models/associations');
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const postgresRoutes = require('./routes/postgresRoutes');
-//const queryRoutes = require('./routes/queryRoutes');
+const monitorRoutes = require('./routes/monitorRoutes');
 const sybaseTdsRoutes = require('./routes/sybaseTdsRoutes');
 const userRoutes = require('./routes/userRoutes');
 
@@ -107,6 +107,8 @@ app.use('/api/postgres', protect, postgresRoutes);
 app.use('/api/queries', protect, postgresRoutes);
 app.use('/api/sybase', protect, sybaseTdsRoutes);
 app.use('/api/users', protect, userRoutes);
+app.use('/api/monitor', protect, monitorRoutes);
+
 
 
 // Error handling middleware

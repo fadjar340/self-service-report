@@ -115,16 +115,16 @@ function displayDatabases(databases) {
             <td>
                 <div class="action-buttons">
                     <!-- Test Connection Button -->
-                    <button class="btn btn-secondary test-connection" data-id="${database.id}" >
-                        Test Connection
+                    <button class="btn btn-secondary test-connection" data-id="${database.id}">
+                        <i class="fas fa-play"></i> Test Connection
                     </button>
                     <!-- Update Button -->
                     <button class="btn btn-secondary btn-edit" data-id="${database.id}" data-conn-name="${database.conn_name}" data-host="${database.host}" data-port="${database.port}" data-database-name="${database.database_name}" data-username="${database.username}" data-password="${database.password}" data-is-active="${database.isActive}">
-                        Edit
+                        <i class="fas fa-edit"></i> Edit
                     </button>
                     <!-- Delete Button -->
                     <button class="btn btn-danger delete-database-btn" data-id="${database.id}" data-is-deleted="${database.isDeleted}">
-                        Delete
+                        <i class="fas fa-trash-alt"></i> Delete
                     </button>
                 </div>
             </td>
@@ -282,8 +282,6 @@ async function confirmDelete() {
     }
 }
 
-// Test database connection
-// Test database connection
 // Test database connection
 async function testDatabaseConnection(buttonData) {
     console.log('Testing connection for database ID:', buttonData.id);

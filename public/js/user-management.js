@@ -112,11 +112,11 @@ function displayUsers(users) {
                             data-role="${user.role}" 
                             data-password="${user.password}"
                             data-is-active="${user.isActive}">
-                        Edit
+                        <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn btn-delete btn-danger" 
                             data-id="${user.id}">
-                        Delete
+                        <i class="fas fa-trash-alt"></i> Delete
                     </button>
                 </div>
             </td>

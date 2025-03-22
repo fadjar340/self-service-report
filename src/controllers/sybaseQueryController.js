@@ -6,6 +6,9 @@ const logger = require('../utils/logger');
 exports.getQueries = async (req, res) => {
     try {
         const queries = await DatabaseQuery.findAll({
+            where: {
+                isActive: true
+            },
             include: [
                 {
                     model: SybaseDatabase,
@@ -36,8 +39,7 @@ exports.getQueries = async (req, res) => {
 
 exports.executeQuery = async (req, res) => {
     try {
-        const { databaseId } = req.params;
-        const { id: queryId } = req.body;
+        const { queryId, startDate, endDate, databaseId } = req.body;
 
         // Retrieve the database configuration
         const database = await SybaseDatabase.findByPk(databaseId);
@@ -55,6 +57,14 @@ exports.executeQuery = async (req, res) => {
                 error: 'Not found',
                 message: 'Query not found'
             });
+        }
+
+        // Replace placeholders in the query text with actual dates
+        let queryText = query.queryText;
+        if (startDate && endDate) {
+            queryText = queryText
+                .replace(':startDate', startDate)
+                .replace(':endDate', endDate);
         }
 
         // Establish connection using ODBC
@@ -80,7 +90,7 @@ exports.executeQuery = async (req, res) => {
             }
 
             // Execute the query
-            db.query(query.queryText, (err, rows) => {
+            db.query(queryText, (err, rows) => {
                 if (err) {
                     logger.error('Query execution error:', err);
                     db.close();
@@ -95,7 +105,8 @@ exports.executeQuery = async (req, res) => {
                 res.json({
                     success: true,
                     data: rows,
-                    message: 'Query executed successfully'
+                    message: 'Query executed successfully',
+                    metadata: { rowCount: rows.length }
                 });
             });
         });
@@ -158,7 +169,8 @@ exports.executeAdHocQuery = async (req, res) => {
                 res.json({
                     success: true,
                     data: rows,
-                    message: 'Query executed successfully'
+                    message: 'Query executed successfully',
+                    metadata: { rowCount: rows.length }
                 });
             });
         });

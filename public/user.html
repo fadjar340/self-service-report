@@ -22,7 +22,7 @@
         <div class="header-right">
             <span class="user-info">Welcome, <span id="username"></span></span>
             <span class="user-role">Role: <span id="userRole"></span></span>
-            <button id="logoutBtn" class="btn btn-danger">Logout</button> <!-- Ensure this ID matches -->
+            <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button> <!-- Ensure this ID matches -->
         </div>
     </header>
         
@@ -47,15 +47,12 @@
             </div>
             </div>
         </div>
-            <!-- Loading Spinner -->
-    <div id="loader" class="hidden">
-        <div class="spinner"></div>
-    </div>
 
     <footer class="dashboard-footer">
         <p>© 2025 Self-Service Report System. All rights reserved.</p>
     </footer>
     </main>
+
 
     <!-- Parameter Modal -->
     <div class="modal" id="parameterModal">
@@ -63,6 +60,7 @@
             <h2 id="modalTitle">Query Parameters</h2>
             <form id="parameterForm">
                 <input type="hidden" id="hiddenQueryId">
+                <input type="hidden" id="hiddenDatabaseId"> <!-- Add this line -->
                 <div class="form-group">
                     <label for="startDate">Start Date:</label>
                     <input type="text" id="startDate" class="flatpickr">
@@ -74,8 +72,8 @@
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" id="closeParameterModalBtn" class="btn btn-secondary">Cancel</button>
-                    <button type="button" id="executeQueryInModalBtn" class="btn btn-primary">Execute Query</button>
+                    <button type="button" id="closeParameterModalBtn" class="btn btn-secondary"><i class="fas fa-window-close"></i> Cancel</button>
+                    <button type="button" id="executeQueryInModalBtn" class="btn btn-primary"><i class="fas fa-play"></i> Execute</button>
                 </div>
             </form>
         </div>
