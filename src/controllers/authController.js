@@ -2,6 +2,8 @@ const AdminUser = require('../models/adminUser');
 const AuditTrail = require('../models/auditTrail');
 const jwt = require('jsonwebtoken');
 
+const moment = require('moment-timezone');
+
 const login = async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -16,6 +18,7 @@ const login = async (req, res) => {
         const user = await AdminUser.findOne({ where: { username } });
         
         if (!user) {
+            const timeZone = process.env.TZ || 'UTC';
             await AuditTrail.create({
                 action: 'LOGIN_FAILED',
                 resource: 'AUTH',
@@ -23,7 +26,7 @@ const login = async (req, res) => {
                 details: {
                     username,
                     reason: 'User not found',
-                    timestamp: new Date().toISOString()
+                    timestamp: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
                 }
             });
 
@@ -35,6 +38,7 @@ const login = async (req, res) => {
 
         const isValidPassword = await user.validatePassword(password);
         if (!isValidPassword) {
+            const timeZone = process.env.TZ || 'UTC';
             await AuditTrail.create({
                 action: 'LOGIN_FAILED',
                 resource: 'AUTH',
@@ -42,7 +46,7 @@ const login = async (req, res) => {
                 details: {
                     username,
                     reason: 'Invalid password',
-                    timestamp: new Date().toISOString()
+                    timestamp: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
                 }
             });
 
@@ -58,13 +62,13 @@ const login = async (req, res) => {
             { expiresIn: '1h' }
         );
 
+        const timeZone = process.env.TZ || 'UTC';
         await AuditTrail.create({
-            userId: user.id,
             action: 'LOGIN_SUCCESS',
             resource: 'AUTH',
             ipAddress: req.ip,
             details: {
-                timestamp: new Date().toISOString()
+                timestamp: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
             }
         });
 

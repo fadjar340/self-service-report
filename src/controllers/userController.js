@@ -1,10 +1,14 @@
 const AdminUser = require('../models/adminUser');
 const AuditTrail = require('../models/auditTrail');
 const jwt = require('jsonwebtoken');
+const moment = require('moment-timezone');
 
 const createUser = async (req, res) => {
     try {
         const { username, password, role } = req.body;
+
+        const timeZone = process.env.TZ || 'UTC';
+        
 
         if (!username || !password || !role) {
             return res.status(400).json({
@@ -28,13 +32,15 @@ const createUser = async (req, res) => {
         });
 
         await AuditTrail.create({
+            user_name: req.user.username,
             action: 'CREATE_USER',
             resource: 'USER',
             ipAddress: req.ip,
             details: {
-                userId: user.id,
+                userId: user.username,
                 username: user.username,
-                role: user.role
+                role: user.role,
+                cretaedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
             }
         });
 
@@ -75,16 +81,22 @@ const updateUser = async (req, res) => {
             });
         }
 
+        const timeZone = process.env.TZ || 'UTC';
+
+        // Remove password if not provided
+        if (!updateData.password) {
+            delete updateData.password;
+        }
+
         // Explicitly include isActive in update fields if provided
         const updateFields = {
             ...updateData,
-            isActive: updateData.isActive !== undefined ? updateData.isActive : user.isActive
+            isActive: updateData.isActive !== undefined ? updateData.isActive : user.isActive,
+            updatedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
+            updatedBy: user.username
         };
 
-        // Remove password if not provided
-        if (!updateFields.password) {
-            delete updateFields.password;
-        }
+
 
         await user.update(updateFields);
 
@@ -92,15 +104,16 @@ const updateUser = async (req, res) => {
         const updatedUser = await AdminUser.findByPk(id); // Changed from User to AdminUser
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: user.username,
             action: 'UPDATE_USER',
             resource: 'USER',
             ipAddress: req.ip,
             details: {
-                userId: updatedUser.id,
                 username: updatedUser.username,
                 role: updatedUser.role,
                 isActive: updatedUser.isActive,
+                updatedAt: updatedUser.updatedAt,
+                updatedBy: updatedUser.updatedBy,
                 changes: user.changed()
             }
         });
@@ -137,20 +150,26 @@ const deleteUser = async (req, res) => {
             });
         }
 
+        const timeZone = process.env.TZ || 'UTC';
+    
         await user.update({
             isDeleted: true,
-            deletedBy: req.user.id,
-            deletedAt: new Date()
+            deletedBy: req.user.username,
+            deletedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
         });
 
         await AuditTrail.create({
+            user_name: req.user.username,
             action: 'DELETE_USER',
             resource: 'USER',
             ipAddress: req.ip,
             details: {
-                userId: id,
+                userId: user.id,
                 username: user.username,
-                role: user.role
+                role: user.role,
+                isDeleted: user.isDeleted,
+                deletedBy: user.deletedBy,
+                deletedAt: user.updatedAt
             }
         });
 

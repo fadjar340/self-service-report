@@ -45,13 +45,18 @@ router.use(protect); // Protect all audit routes
 router.use(isAdmin); // Restrict to admin users only
 
 router.get(
-    '/',
+    '/get-audit',
     validateGetLogs,
+    protect,
+    isAdmin,
     handleValidationErrors,
     auditController.getAuditLogs
 );
 
-router.get('/actions', auditController.getAuditActions);
-router.get('/stats', auditController.getAuditStats);
+router.get('/actions', protect, isAdmin, auditController.getAuditActions);
+router.get('/stats',  protect, isAdmin, auditController.getAuditStats);
+
+// Add endpoint to delete old audit logs
+router.delete('/old',  protect, isAdmin, auditController.deleteOldAuditLogs);
 
 module.exports = router;

@@ -3,6 +3,7 @@ const sequelize = require('../config/db');
 const AuditTrail = require('./auditTrail');
 const DatabaseQuery = require('./databaseQuery');
 const AdminUser = require('./adminUser');
+const moment = require('moment-timezone');
 
 class SybaseDatabase extends Model {
     getConnectionConfig() {

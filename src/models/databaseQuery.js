@@ -1,6 +1,7 @@
 const { Model, DataTypes, Op } = require('sequelize');
 const sequelize = require('../config/db');
 const SybaseDatabase = require('./sybaseDatabase');
+const moment = require('moment-timezone');
 
 class DatabaseQuery extends Model {
     toSafeObject() {
@@ -133,6 +134,11 @@ DatabaseQuery.init({
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT',
         field: 'deletedBy'
+    },
+    deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'deletedAt'
     },
     databaseId: {
         type: DataTypes.INTEGER,

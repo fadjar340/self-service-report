@@ -2,6 +2,7 @@ const { Model, DataTypes, QueryTypes } = require('sequelize');
 const sequelize = require('../config/db');
 const SybaseDatabase = require('./sybaseDatabase')
 const DatabaseQuery = require('./databaseQuery')
+const moment = require('moment-timezone');
 
 class AdminUser extends Model {
     async validatePassword(password) {
@@ -93,7 +94,7 @@ AdminUser.init({
         field: 'updatedBy',
         references: {
             model: 'admin_users',
-            key: 'id'
+            key: 'username'
         }
     },
     createdBy: {
@@ -102,7 +103,7 @@ AdminUser.init({
         field: 'createdBy',
         references: {
             model: 'admin_users',
-            key: 'id'
+            key: 'username'
         }
     },
     deletedBy: {
@@ -111,7 +112,7 @@ AdminUser.init({
         field: 'deletedBy',
         references: {
             model: 'admin_users',
-            key: 'id'
+            key: 'username'
         }
     },
     deletedAt: {

@@ -10,27 +10,18 @@ CREATE TABLE IF NOT EXISTS admin_users (
     role VARCHAR(50) NOT NULL DEFAULT 'user',
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "updatedBy" INTEGER REFERENCES admin_users(id),
-    "createdBy" INTEGER REFERENCES admin_users(id),
-    "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
+    "updatedBy" VARCHAR(255) REFERENCES admin_users(username),
+    "createdBy" VARCHAR(255) REFERENCES admin_users(username),
+    "deletedBy" VARCHAR(255) REFERENCES admin_users(username) DEFAULT NULL,
     "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     "isActive" BOOLEAN DEFAULT TRUE,
     "isDeleted" BOOLEAN DEFAULT FALSE
 );
 
--- Create sessions table
---CREATE TABLE IF NOT EXISTS sessions (
---    sid VARCHAR NOT NULL PRIMARY KEY,
---    expires TIMESTAMP WITH TIME ZONE NOT NULL,
---    data TEXT,
---    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
---    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
---);
-
 -- Create audit_trails table
 CREATE TABLE IF NOT EXISTS audit_trails (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES admin_users(id),
+    user_name VARCHAR(255) REFERENCES admin_users(username),
     action VARCHAR(255) NOT NULL,
     resource VARCHAR(255) NOT NULL,
     ip_address VARCHAR(45),
@@ -47,11 +38,11 @@ CREATE TABLE sybase_databases (
     database_name VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    "createdBy" INTEGER REFERENCES admin_users(id),
-    "updatedBy" INTEGER REFERENCES admin_users(id),
+    "createdBy" VARCHAR(255) REFERENCES admin_users(username),
+    "updatedBy" VARCHAR(255) REFERENCES admin_users(username),
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
+    "deletedBy" VARCHAR(255) REFERENCES admin_users(username) DEFAULT NULL,
     "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     "isActive" BOOLEAN DEFAULT FALSE,
     "isDeleted" BOOLEAN DEFAULT FALSE
@@ -63,11 +54,11 @@ CREATE TABLE IF NOT EXISTS database_queries (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     query_text TEXT NOT NULL,
-    "createdBy" INTEGER REFERENCES admin_users(id),
-    "updatedBy" INTEGER REFERENCES admin_users(id),
+    "createdBy" VARCHAR(255) REFERENCES admin_users(username),
+    "updatedBy" VARCHAR(255) REFERENCES admin_users(username),
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "deletedBy" INTEGER REFERENCES admin_users(id) DEFAULT NULL,
+    "deletedBy" VARCHAR(255) REFERENCES admin_users(username) DEFAULT NULL,
     "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     "isActive" BOOLEAN NOT NULL,
     "isDeleted" BOOLEAN DEFAULT FALSE,
@@ -81,7 +72,7 @@ ALTER TABLE admin_users ADD CONSTRAINT admin_users_username_unique UNIQUE (usern
 
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS idx_audit_trails_user_id ON audit_trails(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_trails_user_name ON audit_trails(user_name);
 CREATE INDEX IF NOT EXISTS idx_audit_trails_action ON audit_trails(action);
 CREATE INDEX IF NOT EXISTS idx_audit_trails_createdAt ON audit_trails("createdAt");
 CREATE INDEX IF NOT EXISTS idx_database_queries_createdBy ON database_queries("createdBy");
@@ -141,10 +132,18 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+CREATE OR REPLACE FUNCTION update_deletedAt_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."deletedAt" = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 CREATE OR REPLACE FUNCTION update_createdBy_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW."createdBy" = (SELECT id FROM admin_users WHERE username = current_user)::INTEGER;
+    NEW."createdBy" = (SELECT username FROM admin_users WHERE username = current_user)::VARCHAR;
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -152,7 +151,15 @@ $$ language 'plpgsql';
 CREATE OR REPLACE FUNCTION update_updatedBy_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW."updatedBy" = (SELECT id FROM admin_users WHERE username = current_user)::INTEGER;
+    NEW."updatedBy" = (SELECT username FROM admin_users WHERE username = current_user)::VARCHAR;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE OR REPLACE FUNCTION update_deletedBy_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."deletedBy" = (SELECT username FROM admin_users WHERE username = current_user)::VARCHAR;
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -168,6 +175,11 @@ CREATE TRIGGER update_admin_users_updatedAt
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedAt_column();
 
+CREATE TRIGGER update_admin_users_deletedAt
+    BEFORE UPDATE ON admin_users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_deletedBy_column();
+
 CREATE TRIGGER update_admin_users_createdBy
     BEFORE INSERT ON admin_users
     FOR EACH ROW
@@ -177,6 +189,11 @@ CREATE TRIGGER update_admin_users_updatedBy
     BEFORE UPDATE ON admin_users
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedBy_column();
+
+CREATE TRIGGER update_admin_users_deletedBy
+    BEFORE INSERT ON admin_users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_deletedBy_column();
 
 -- database_queries triggers
 CREATE TRIGGER update_database_queries_createdAt
@@ -189,6 +206,11 @@ CREATE TRIGGER update_database_queries_updatedAt
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedAt_column();
 
+CREATE TRIGGER update_database_queries_deletedAt
+    BEFORE INSERT ON database_queries
+    FOR EACH ROW
+    EXECUTE FUNCTION update_deletedAt_column();
+
 CREATE TRIGGER update_database_queries_createdBy
     BEFORE INSERT ON database_queries
     FOR EACH ROW
@@ -198,6 +220,11 @@ CREATE TRIGGER update_database_queries_updatedBy
     BEFORE UPDATE ON database_queries
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedBy_column();
+
+CREATE TRIGGER update_database_queries_deletedBy
+    BEFORE UPDATE ON database_queries
+    FOR EACH ROW
+    EXECUTE FUNCTION update_deletedBy_column();
 
 -- sybase_databases triggers
 CREATE TRIGGER update_sybase_databases_updatedAt
@@ -210,6 +237,11 @@ CREATE TRIGGER update_sybase_databases_createdAt
     FOR EACH ROW
     EXECUTE FUNCTION update_createdAt_column();
 
+CREATE TRIGGER update_sybase_databases_deletedAt
+    BEFORE INSERT ON sybase_databases
+    FOR EACH ROW
+    EXECUTE FUNCTION update_deletedAt_column();
+
 CREATE TRIGGER update_sybase_databases_createdBy
     BEFORE INSERT ON sybase_databases
     FOR EACH ROW
@@ -219,6 +251,11 @@ CREATE TRIGGER update_sybase_databases_updatedBy
     BEFORE UPDATE ON sybase_databases
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedBy_column();
+
+CREATE TRIGGER update_sybase_databases_deletedBy
+    BEFORE UPDATE ON sybase_databases
+    FOR EACH ROW
+    EXECUTE FUNCTION update_deletedBy_column();
 
 -- audit_trails triggers
 CREATE TRIGGER update_audit_trails_createdAt

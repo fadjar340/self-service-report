@@ -3,75 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Management</title>
-    <link rel="stylesheet" href="css/styles.css"> <!-- Link to your CSS file -->
-    <link rel="stylesheet" href="css/all.min.css"> <!-- Font Awesome for icons -->
+    <title>Audit Trail</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/all.min.css">
 </head>
 <body>
-   <!-- Sidebar -->
-   <aside class="sidebar">
-    <div class="sidebar-header">
-        <h2>Menu</h2>
-    </div>
-    <nav class="sidebar-nav">
-        <ul>
-            <li>
-                <a href="/admin.html">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="/database-management.html">
-                    <i class="fas fa-database"></i> Database Management
-                </a>
-            </li>
-            <li>
-                <a href="/health-check.html">
-                    <i class="fas fa-heartbeat"></i> Health Check Monitoring
-                </a>
-            </li>
-            <li>
-                <a href="/audit-trail.html">
-                    <i class="fas fa-clipboard-list"></i> Audit Trail Query
-                </a>
-            </li>
-            <li>
-                <a href="/user-management.html">
-                    <i class="fas fa-users-cog"></i> User Management
-                </a>
-            </li>
-            <li>
-                <a href="/query-management.html">
-                    <i class="fas fa-code"></i> Query Management
-                </a>
-            </li>
-        </ul>
-    </nav>
-</aside>
-
-<!-- Main Content -->
-<main class="main-content">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-left">
-            <h1>Admin Dashboard</h1>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Menu</h2>
         </div>
-        <div class="header-right">
-            <span class="user-info">Welcome, <span id="username"></span></span>
-            <span class="user-role">Role: <span id="userRole"></span></span>
-            <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button> <!-- Ensure this ID matches -->
-        </div>
-    </header>
-    <nav class="navbar">
-        <a href="#" class="navbar-brand">Audit Trail</a>
-    </nav>
-    <div id="loader" class="hidden">
-        <div class="spinner"></div>
-    </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="/admin.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="/database-management.html"><i class="fas fa-database"></i> Database Management</a></li>
+                <li><a href="/health-check.html"><i class="fas fa-heartbeat"></i> Health Check Monitoring</a></li>
+                <li><a href="/audit-trail.html"><i class="fas fa-clipboard-list"></i> Audit Trail Query</a></li>
+                <li><a href="/user-management.html"><i class="fas fa-users-cog"></i> User Management</a></li>
+                <li><a href="/query-management.html"><i class="fas fa-code"></i> Query Management</a></li>
+                <li><a href="/user.html"><i class="fas fa-database"></i> User Queries</a></li>
+            </ul>
+        </nav>
+    </aside>
 
-    <footer class="dashboard-footer">
-        <p>© 2025 Self-Service Report System. All rights reserved.</p>
-    </footer>
-</main>
+    <main class="main-content">
+        <header class="header">
+            <div class="header-left">
+                <h1>Audit Trail</h1>
+            </div>
+            <div class="header-right">
+                <span class="user-info">Welcome, <span id="username"></span></span>
+                <span class="user-role">Role: <span id="userRole"></span></span>
+                <button id="logoutBtn" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </header>
+        <nav class="navbar">
+            <a href="#" class="navbar-brand">Audit Trail</a>
+        </nav>
+
+        <div class="query-section">
+            <form id="filterForm">
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" name="startDate">
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" name="endDate">
+                </div>
+                <div class="form-group">
+                    <label for="action">Action</label>
+                    <input type="text" id="action" name="action">
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </form>
+        </div>
+
+        <div id="loader" class="hidden">
+            <div class="spinner"></div>
+        </div>
+
+        <div id="auditLogs" class="query-results">
+            <h2>Audit Logs</h2>
+            <table id="auditLogsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Resource</th>
+                        <th>IP Address</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="auditLogsTableBody">
+                </tbody>
+            </table>
+            <div id="pagination" class="pagination"></div>
+        </div>
+
+        <footer class="dashboard-footer">
+            <p>© 2025 Self-Service Report System. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <script src="js/audit-trail.js"></script>
 </body>
 </html>

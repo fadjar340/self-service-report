@@ -10,6 +10,8 @@ services:
       - POSTGRES_DB=self_service
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - TZ=Asia/Jakarta
+      - POSTGRES TZ=Asia/Jakarta
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -37,6 +39,7 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - JWT_SECRET=af271205b488faa3b917f74706bf900bb74cc8131988daa43feec1b3fd567cacc65f164626fe88fd319b4d4fb29c61fc0f1436dc94b1a0b6173ab3f033b31ae7
+      - TZ=Asia/Jakarta
 
     volumes:
       - .:/usr/src/app

@@ -5,6 +5,7 @@ const AdminUser = require('../models/adminUser');
 const logger = require('../utils/logger');
 const { authenticate, authorize } = require('./authController');
 const jwt = require('jsonwebtoken');
+const moment = require('moment-timezone');
 
 const getDatabases = async (req, res) => {
     try {
@@ -14,11 +15,9 @@ const getDatabases = async (req, res) => {
             isDeleted: false
         };
 
-
         if (search) {
             where.id = { [Op.like]: `%${search}%` };
         }
-
 
         const databases = await SybaseDatabase.findAll({
             where,
@@ -51,17 +50,17 @@ const getDatabase = async (req, res) => {
         const database = await SybaseDatabase.findByPk(id, {
             include: [
                 {
-                    model: AdminUser, // Use the imported model
+                    model: AdminUser,
                     as: 'creator',
                     attributes: ['username']
                 },
                 {
-                    model: AdminUser, // Use the imported model
+                    model: AdminUser,
                     as: 'updater',
                     attributes: ['username']
                 },
                 {
-                    model: AdminUser, // Use the imported model
+                    model: AdminUser,
                     as: 'deleter',
                     attributes: ['username']
                 }
@@ -89,6 +88,9 @@ const saveDatabase = async (req, res) => {
     try {
         const { conn_name, host, port, database_name, username, password, isActive } = req.body;
 
+        // Get timezone from environment variable or default to UTC
+        const timeZone = process.env.TZ || 'UTC';
+
         const database = await SybaseDatabase.create({
             conn_name,
             host,
@@ -96,24 +98,25 @@ const saveDatabase = async (req, res) => {
             database_name,
             username,
             password,
-            createdBy: req.user.id,
+            createdBy: req.user.username,
             isActive,
-            isDeleted: false
+            createdAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
         });
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: req.user.username,
             action: 'CREATE_DATABASE',
             resource: 'SYBASE_DATABASE',
             ipAddress: req.ip,
             details: {
-                databaseId: database.id,
                 conn_name: database.conn_name,
                 host: database.host,
                 port: database.port,
                 database_name: database.database_name,
                 username: database.username,
-                isActive: database.isActive
+                isActive: database.isActive,
+                createdAt: database.createdAt,
+                createdBy: database.createdBy
             }
         });
 
@@ -150,34 +153,36 @@ const updateDatabase = async (req, res) => {
             });
         }
 
-        if (database.createdBy !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({
-                error: 'Forbidden',
-                message: 'You do not have permission to update this database connection'
-            });
+        // Only include password if it's provided in the update data
+        if (!updateData.password) {
+            delete updateData.password;
         }
 
-        // Only include password if it's provided in the update data
-        const updateFields = { ...updateData };
-        if (!updateFields.password) {
-            delete updateFields.password;
-        }
+        // Get timezone from environment variable or default to UTC
+        const timeZone = process.env.TZ || 'UTC';
+
+        const updateFields = {
+            ...updateData,
+            updatedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
+            updatedBy: req.user.username
+        };
 
         await database.update(updateFields);
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: req.user.username,
             action: 'UPDATE_DATABASE',
             resource: 'SYBASE_DATABASE',
             ipAddress: req.ip,
             details: {
-                databaseId: database.id,
                 conn_name: database.conn_name,
                 host: database.host,
                 port: database.port,
                 database_name: database.database_name,
                 username: database.username,
                 isActive: database.isActive,
+                updatedAt: database.updatedAt,
+                updatedBy: database.updatedBy,
                 changes: database.changed()
             }
         });
@@ -214,21 +219,29 @@ const deleteDatabase = async (req, res) => {
             });
         }
 
+        // Get timezone from environment variable or default to UTC
+        const timeZone = process.env.TZ || 'UTC';
+
         await database.update({
             isActive: false,
             isDeleted: true,
-            deletedBy: req.user.id,
-            deletedAt: new Date()
+            deletedBy: req.user.username,
+            deletedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
         });
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: req.user.username,
             action: 'DELETE_DATABASE',
             resource: 'SYBASE_DATABASE',
             ipAddress: req.ip,
             details: {
                 databaseId: id,
-                conn_name: database.conn_name
+                conn_name: database.conn_name,
+                deletedAt: database.deletedAt,
+                deletedBy: database.deletedBy,
+                isActive: database.isActive,
+                isDeleted: database.isDeleted,
+                changes: database.changed()
             }
         });
 
@@ -243,7 +256,6 @@ const deleteDatabase = async (req, res) => {
         });
     }
 };
-
 
 const getQueries = async (req, res) => {
     try {
@@ -373,19 +385,21 @@ const saveQuery = async (req, res) => {
             });
         }
 
+        // Get timezone from environment variable or default to UTC
+        const timeZone = process.env.TZ || 'UTC';
+
         const query = await DatabaseQuery.create({
             name,
             description,
             queryText,
-            createdBy: req.user.id,
-            updatedBy: req.user.id,
+            createdBy: req.user.username,
+            createdAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
             isActive,
-            isDeleted: false,
             databaseId: database.id
         });
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: req.user.username,
             action: 'CREATE_QUERY',
             resource: 'DATABASE_QUERY',
             ipAddress: req.ip,
@@ -393,7 +407,10 @@ const saveQuery = async (req, res) => {
                 queryId: query.id,
                 name: query.name,
                 description: query.description,
-                isActive: query.isActive
+                isActive: query.isActive,
+                createdAt: query.createdAt,
+                createdBy: query.createdBy,
+                databaseId: query.databaseId
             }
         });
 
@@ -437,17 +454,21 @@ const updateQuery = async (req, res) => {
             });
         }
 
+        // Get timezone from environment variable or default to UTC
+        const timeZone = process.env.TZ || 'UTC';
+
         await query.update({
             name,
             description,
             queryText,
             isActive,
             databaseId,
-            updatedBy: req.user.id
+            updatedBy: req.user.username,
+            updatedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
         });
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: req.user.username,
             action: 'UPDATE_QUERY',
             resource: 'DATABASE_QUERY',
             ipAddress: req.ip,
@@ -456,6 +477,9 @@ const updateQuery = async (req, res) => {
                 name: query.name,
                 description: query.description,
                 isActive: query.isActive,
+                updatedBy: query.updatedBy,
+                updatedAt: query.updatedAt,
+                databaseId: query.databaseId,
                 changes: query.changed()
             }
         });
@@ -499,20 +523,27 @@ const deleteQuery = async (req, res) => {
             });
         }
 
+        // Get timezone from environment variable or default to UTC
+        const timeZone = process.env.TZ || 'UTC';
+
         await query.update({
             isDeleted: true,
-            deletedBy: req.user.id,
-            deletedAt: new Date()
+            deletedBy: req.user.username,
+            deletedAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
         });
 
         await AuditTrail.create({
-            userId: req.user.id,
+            user_name: req.user.username,
             action: 'DELETE_QUERY',
             resource: 'DATABASE_QUERY',
             ipAddress: req.ip,
             details: {
                 queryId: id,
-                name: query.name
+                name: query.name,
+                deletedBy: query.deletedBy,
+                deletedAt: query.deletedAt,
+                isDeleted: query.isDeleted,
+                changes: query.changed() 
             }
         });
 

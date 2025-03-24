@@ -1,16 +1,22 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const moment = require('moment-timezone');
 
 class AuditTrail extends Model {
-    static async logAction({ userId, action, resource, ipAddress, details }) {
+    static async logAction({ user_name, action, resource, ipAddress, details }) {
         try {
+            const timeZone = process.env.TZ || 'UTC';
+            
             return await this.create({
-                user_id: userId,
+                user_name: user_name,
                 action,
                 resource,
                 ip_address: ipAddress,
-                details,
-                createdAt: new Date()
+                details: {
+                    ...details,
+                    timestamp: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
+                },
+                createdAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
             });
         } catch (error) {
             console.error('Audit log creation error:', error);
@@ -25,12 +31,12 @@ AuditTrail.init({
         primaryKey: true,
         autoIncrement: true
     },
-    user_id: {
-        type: DataTypes.INTEGER,
+    user_name: {
+        type: DataTypes.STRING(255),
         allowNull: true,
         references: {
             model: 'admin_users',
-            key: 'id'
+            key: 'username'
         }
     },
     action: {

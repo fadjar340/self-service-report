@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const sequelize = require('./config/db');
-const logger = require('./utils/logger');
 const jwt = require('jsonwebtoken');
 
 require('./models/associations');
@@ -15,9 +14,11 @@ const postgresRoutes = require('./routes/postgresRoutes');
 const monitorRoutes = require('./routes/monitorRoutes');
 const sybaseTdsRoutes = require('./routes/sybaseTdsRoutes');
 const userRoutes = require('./routes/userRoutes');
+const auditRoutes = require('./routes/auditRoutes');
+
 
 const app = express();
-
+app.use('/favicon.ico', express.static('icons/favicon.ico'));
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
@@ -39,7 +40,7 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minuteswget 
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 10000
 });
 app.use('/api/', limiter);
@@ -57,7 +58,6 @@ sequelize.authenticate()
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
-//app.use('/node_modules', express.static(path.join(__dirname, 'node_modules')));
 
 // JWT protection middleware
 const protect = (req, res, next) => {
@@ -82,25 +82,6 @@ const protect = (req, res, next) => {
     }
 };
 
-// Request logging middleware
-app.use((req, res, next) => {
-    const start = Date.now();
-    
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        logger.info({
-            method: req.method,
-            url: req.url,
-            status: res.statusCode,
-            duration: `${duration}ms`,
-            userId: req.user?.id,
-            userRole: req.user?.role,
-            timestamp: new Date().toISOString()
-        });
-    });
-    next();
-});
-
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/postgres', protect, postgresRoutes);
@@ -108,17 +89,8 @@ app.use('/api/queries', protect, postgresRoutes);
 app.use('/api/sybase', protect, sybaseTdsRoutes);
 app.use('/api/users', protect, userRoutes);
 app.use('/api/monitor', protect, monitorRoutes);
+app.use('/api/audit', protect, auditRoutes);
 
-
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    logger.error(err.stack);
-    res.status(500).json({
-        error: 'Server error',
-        message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
-    });
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
