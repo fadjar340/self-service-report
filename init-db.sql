@@ -206,11 +206,6 @@ CREATE TRIGGER update_database_queries_updatedAt
     FOR EACH ROW
     EXECUTE FUNCTION update_updatedAt_column();
 
-CREATE TRIGGER update_database_queries_deletedAt
-    BEFORE INSERT ON database_queries
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedAt_column();
-
 CREATE TRIGGER update_database_queries_createdBy
     BEFORE INSERT ON database_queries
     FOR EACH ROW
@@ -236,11 +231,6 @@ CREATE TRIGGER update_sybase_databases_createdAt
     BEFORE INSERT ON sybase_databases
     FOR EACH ROW
     EXECUTE FUNCTION update_createdAt_column();
-
-CREATE TRIGGER update_sybase_databases_deletedAt
-    BEFORE INSERT ON sybase_databases
-    FOR EACH ROW
-    EXECUTE FUNCTION update_deletedAt_column();
 
 CREATE TRIGGER update_sybase_databases_createdBy
     BEFORE INSERT ON sybase_databases

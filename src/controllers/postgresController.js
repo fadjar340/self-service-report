@@ -393,6 +393,7 @@ const saveQuery = async (req, res) => {
             description,
             queryText,
             createdBy: req.user.username,
+            updatedBy: req.user.username,
             createdAt: moment.tz(new Date(), timeZone).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
             isActive,
             databaseId: database.id

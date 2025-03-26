@@ -18,7 +18,26 @@ const auditRoutes = require('./routes/auditRoutes');
 
 
 const app = express();
+
+//Trust Proxy
+const trustProxy = process.env.TRUST_PROXY;
+
+// Configure trust proxy based on the environment variable
+if (trustProxy !== undefined) {
+  app.set('trust proxy', parseTrustProxy(trustProxy));
+}
+
+// Helper function to parse the value (optional)
+function parseTrustProxy(value) {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (!isNaN(value)) return parseInt(value); // For numbers (e.g., 1, 2)
+  return value; // For strings like 'loopback' or IP ranges
+}
+
 app.use('/favicon.ico', express.static('icons/favicon.ico'));
+
+
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
