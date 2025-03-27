@@ -45,6 +45,32 @@
         </div>
     </div>
 
+    <script>
+        // This script handles the rows per page functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const rowsPerPageSelect = document.getElementById('rowsPerPage');
+            
+            if (!rowsPerPageSelect) {
+                console.error('rowsPerPage select element not found');
+                return;
+            }
+            
+            rowsPerPageSelect.addEventListener('change', () => {
+                console.log('Rows per page changed');
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('rowsPerPage', rowsPerPageSelect.value);
+                
+                console.log('New URL:', window.location.pathname + '?' + urlParams.toString());
+                
+                window.location.search = urlParams.toString();
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100);
+            });
+        });
+    </script>
     <script src="js/results.js"></script>
 </body>
 </html>

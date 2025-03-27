@@ -5,11 +5,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const databaseId = urlParams.get('databaseId');
     const startDate = urlParams.get('startDate');
     const endDate = urlParams.get('endDate');
+    const rowsPerPage = urlParams.get('rowsPerPage') || '10'; // Get rowsPerPage from URL params
     
     if (!queryId || !databaseId || !startDate || !endDate) {
         alert('Missing required parameters');
         window.close();
         return;
+    }
+    
+    // Set the rowsPerPage dropdown value
+    const rowsPerPageSelect = document.getElementById('rowsPerPage');
+    if (rowsPerPageSelect) {
+        rowsPerPageSelect.value = rowsPerPage;
+        
+        // Add event listener for change event
+        rowsPerPageSelect.addEventListener('change', () => {
+            console.log('Rows per page changed');
+            
+            // Get current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Update rowsPerPage parameter
+            urlParams.set('rowsPerPage', rowsPerPageSelect.value);
+            
+            // Log the new URL
+            console.log('New URL:', window.location.pathname + '?' + urlParams.toString());
+            
+            // Reload the page with updated parameters
+            window.location.search = urlParams.toString();
+        });
+    } else {
+        console.error('rowsPerPage select element not found');
     }
     
     try {
@@ -77,8 +103,17 @@ function displayResults(data) {
         
         headers.forEach(header => {
             const td = document.createElement('td');
-            td.textContent = row[header] !== undefined ? row[header] : '';
-            td.title = row[header] !== undefined ? row[header] : ''; // Add tooltip with full cell text
+            let cellValue = row[header] !== undefined ? row[header] : '';
+            
+            // Check if the value is a date string
+            if (typeof cellValue === 'string' && isValidDate(cellValue)) {
+                // Convert to local timezone and format
+                const date = new Date(cellValue);
+                cellValue = formatDateForDisplay(date);
+            }
+            
+            td.textContent = cellValue;
+            td.title = cellValue; // Add tooltip with full cell text
             tr.appendChild(td);
         });
         
@@ -89,8 +124,27 @@ function displayResults(data) {
     paginateResults();
 }
 
+// Helper function to validate date strings
+function isValidDate(dateString) {
+    const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/;
+    return regex.test(dateString);
+}
+
+// Helper function to format dates for display
+function formatDateForDisplay(date) {
+    return date.toLocaleString(navigator.language, {
+        year: 'numeric',
+        month: '2-digit',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
 function paginateResults() {
-    const rowsPerPage = document.getElementById('rowsPerPage').value;
+    const rowsPerPageSelect = document.getElementById('rowsPerPage');
+    const rowsPerPage = rowsPerPageSelect ? rowsPerPageSelect.value : '10';
     const tableBody = document.getElementById('resultsBody');
     const rows = tableBody.querySelectorAll('tr');
     const totalPages = Math.ceil(rows.length / rowsPerPage);
@@ -119,7 +173,8 @@ function paginateResults() {
 }
 
 function showPage(pageNumber) {
-    const rowsPerPage = document.getElementById('rowsPerPage').value;
+    const rowsPerPageSelect = document.getElementById('rowsPerPage');
+    const rowsPerPage = rowsPerPageSelect ? rowsPerPageSelect.value : '10';
     const tableBody = document.getElementById('resultsBody');
     const rows = tableBody.querySelectorAll('tr');
     const startIdx = (pageNumber - 1) * rowsPerPage;
@@ -229,6 +284,7 @@ document.getElementById('downloadXlsBtn').addEventListener('click', async () => 
     }
 });
 
+// Update download function to format dates
 function downloadResults(apiResponse, format) {
     const data = apiResponse.data; // Assuming the API response has a 'data' property containing the array
     
@@ -238,12 +294,33 @@ function downloadResults(apiResponse, format) {
         return;
     }
 
+    // Identify date columns by checking if any value in the column is a date
+    const headers = Object.keys(data[0] || {});
+    const dateColumns = headers.filter(header => {
+        return data.some(row => {
+            const value = row[header];
+            return typeof value === 'string' && isValidDate(value);
+        });
+    });
+
+    // Create formatted data for download
+    const formattedData = data.map(row => {
+        return headers.reduce((acc, header) => {
+            let value = row[header];
+            if (dateColumns.includes(header) && typeof value === 'string' && isValidDate(value)) {
+                const date = new Date(value);
+                value = formatDateForDownload(date);
+            }
+            acc[header] = value;
+            return acc;
+        }, {});
+    });
+
     if (format === 'csv') {
         // CSV format
-        const headers = Object.keys(data[0] || {});
         const csvContent = [
             headers.join(','),
-            ...data.map(row => 
+            ...formattedData.map(row => 
                 headers.map(header => 
                     `"${String(row[header]).replace(/"/g, '""')}"`
                 ).join(',')
@@ -261,12 +338,12 @@ function downloadResults(apiResponse, format) {
         // XLS format (simple HTML table)
         const worksheet = `
             <table>
-                <tr>${Object.keys(data[0] || {}).map(header => 
+                <tr>${headers.map(header => 
                     `<th>${header}</th>`
                 ).join('')}</tr>
-                ${data.map(row => `
-                    <tr>${Object.values(row).map(value => 
-                        `<td>${value !== null ? value : ''}</td>`
+                ${formattedData.map(row => `
+                    <tr>${headers.map(header => 
+                        `<td>${row[header] !== null ? row[header] : ''}</td>`
                     ).join('')}</tr>`
                 ).join('')}
             </table>
@@ -280,6 +357,18 @@ function downloadResults(apiResponse, format) {
         a.click();
         window.URL.revokeObjectURL(url);
     }
+}
+
+// Helper function to format dates for download
+function formatDateForDownload(date) {
+    return date.toLocaleString(navigator.language, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    }).replace(/\/|,/g, '-');
 }
 
 document.getElementById('closeResultsBtn').addEventListener('click', () => {
